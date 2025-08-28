@@ -23,11 +23,11 @@ export default function Sidebar() {
     return (
         <aside>
             {/* Logo */}
-            <div>
+            {/* <div>
                 <Link href="/">
                     <img src="/Sliqpayvisual12.png" alt="SliqPay" />
                 </Link>
-            </div>
+            </div> */}
 
             {/* Navigation */}
             <nav>
