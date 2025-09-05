@@ -1,0 +1,4 @@
+*.next
+*MIGRATION_NOTES.md
+*node_modules
+*out
