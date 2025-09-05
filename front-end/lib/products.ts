@@ -5,4 +5,4 @@ export const Products = {
     electricity: {label: "Electricity", providers: ["IKEDC", "EKEDC", "AEDC", "JED", "IBEDC", "PHED", "KED"]}
 } as const;
 
-export type Category = keyof typeof Products; 
+export type Category = keyof typeof Products;
