@@ -2,7 +2,9 @@
   "name": "sliqpay",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["backend"],
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
     "dev:fe": "next dev --turbopack",
     "dev:be": "npm run dev --workspace backend",
@@ -32,10 +34,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4.1.11",
-    "typescript": "^5",
-    "concurrently": "^9.0.0"
+    "typescript": "^5"
   }
 }

@@ -1,18 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { IoSettingsSharp } from "react-icons/io5";
 import { IoNotifications } from "react-icons/io5";
-
-
+import { useState } from 'react';
 
 export default function Navbar() {
     const pathName = usePathname();
-
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
     const dashboard = pathName == "/dashboard";
     const history = pathName.startsWith("/dashboard/history");
 
+    async function logout() {
+      try {
+        setLoading(true);
+        const base = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api/v1';
+        await fetch(`${base}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (e) {
+        // swallow
+      } finally {
+        setLoading(false);
+        router.push('/auth/login');
+      }
+    }
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b">
@@ -45,10 +57,11 @@ export default function Navbar() {
         <div className="flex items-center gap-3 text-gray-600">
                 <IoSettingsSharp />
                 <IoNotifications />
+                <button onClick={logout} disabled={loading} className="text-sm text-red-600 hover:underline disabled:opacity-50">{loading ? '...' : 'Logout'}</button>
         </div>
 
         
       </div>
     </header>
   );
-} 
+}
