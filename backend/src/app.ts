@@ -1,0 +1,18 @@
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import routes from './routes/index.js';
+import { notFound } from './common/middleware/notFound.js';
+import { errorHandler } from './common/middleware/errorHandler.js';
+
+export const app = express();
+app.use(helmet());
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+app.use(morgan('dev'));
+app.use('/api/v1', routes);
+app.use(notFound);
+app.use(errorHandler);

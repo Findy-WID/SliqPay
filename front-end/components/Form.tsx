@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 type FormInfos = {
   fname: string;
@@ -18,12 +20,12 @@ interface FormProp {
   formtype: FormType;
 }
 
-
 export default function Form({ formtype }: FormProp) {
     const showField = (field: string) => {
         if (formtype === "signup") return true;
         if (formtype === "login") return field === "email" || field === "password";
         if (formtype === "forgot") return field === "email";
+        return false;
     };
 
     const formHeading = (): { title: string; subtitle: string } => {
@@ -52,8 +54,7 @@ export default function Form({ formtype }: FormProp) {
         }
     };
 
-
-    const { title, subtitle } = formHeading() ;
+    const { title, subtitle } = formHeading();
 
     const [formInfos, setFormInfos] = useState<FormInfos>({
         fname: "",
@@ -64,6 +65,38 @@ export default function Form({ formtype }: FormProp) {
         cPassword: "",
         refCode: "",
     });
+    const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const router = useRouter();
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api/v1";
+
+    const onSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMsg(null);
+        if (formtype === 'signup' && formInfos.password !== formInfos.cPassword) {
+            setErrorMsg('Passwords do not match');
+            return;
+        }
+        if (!formInfos.email || (formtype !== 'forgot' && !formInfos.password)) {
+            setErrorMsg('Email and password are required');
+            return;
+        }
+        try {
+            setLoading(true);
+            const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/login';
+            const payload: any = { email: formInfos.email, password: formInfos.password };
+            if (formtype === 'signup') {
+                payload.fname = formInfos.fname;
+                payload.lname = formInfos.lname;
+            }
+            await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+            router.push('/dashboard');
+        } catch (err: any) {
+            setErrorMsg(err.message || 'Something went wrong');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#f4fdf8] flex flex-col justify-center items-center p-6 space-y-12">
@@ -72,11 +105,12 @@ export default function Form({ formtype }: FormProp) {
             alt="SliqPay"
             className="h-12 mx-auto mb-4"
         />   
-        <form className="px-8 pt-6 pb-12 mb-4 w-full max-w-md bg-white shadow-md rounded-lg">
+        <form onSubmit={onSubmit} className="px-8 pt-6 pb-12 mb-4 w-full max-w-md bg-white shadow-md rounded-lg">
             <div className="text-center mb-6">
                 <h1 className="text-2xl font-bold mb-2">{title}</h1>
                 <p className="text-sm text-gray-600">{subtitle}</p>
             </div>
+            {errorMsg && <p className="text-sm text-red-600 mb-4" role="alert">{errorMsg}</p>}
 
             {showField("fname") && (
             <div className="mb-4">
@@ -185,9 +219,10 @@ export default function Form({ formtype }: FormProp) {
 
             <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
+            disabled={loading}
+            className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors disabled:opacity-60"
             >
-            {formtype === "signup" ? "Create Account" : formtype === "login" ? "Sign In" : "Reset Password"}
+            {loading ? 'Please wait...' : (formtype === "signup" ? "Create Account" : formtype === "login" ? "Sign In" : "Reset Password")}
             </button>
 
             <div className="text-center mt-4">
@@ -224,4 +259,4 @@ export default function Form({ formtype }: FormProp) {
         </form>
         </div>
     );
-} 
+}

@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // output: 'export', // removed to enable SSR & middleware for auth
   eslint: {
     ignoreDuringBuilds: true,
   },

@@ -2,11 +2,21 @@
   "name": "sliqpay",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev:fe": "next dev --turbopack",
+    "dev:be": "npm run dev --workspace backend",
+    "dev": "concurrently \"npm:dev:fe\" \"npm:dev:be\"",
+    "build:fe": "next build",
+    "build:be": "npm run build --workspace backend",
+    "build": "npm run build:fe && npm run build:be",
+    "start:fe": "next start",
+    "start:be": "npm run start --workspace backend",
+    "start": "concurrently \"npm:start:fe\" \"npm:start:be\"",
+    "lint": "next lint && npm run lint --workspace backend",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspace backend"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -24,6 +34,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4.1.11",

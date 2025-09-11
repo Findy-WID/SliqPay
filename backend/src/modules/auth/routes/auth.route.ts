@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { handleLogin, handleSignup, handleLogout, handleMe } from '../controllers/auth.controller.js';
+import { validate } from '../../../common/middleware/validate.js';
+import { signupSchema, loginSchema } from '../schemas/auth.schema.js';
+import { authGuard } from '../../../common/middleware/auth.js';
+
+const router = Router();
+router.post('/signup', validate(signupSchema), handleSignup);
+router.post('/login', validate(loginSchema), handleLogin);
+router.post('/logout', handleLogout);
+router.get('/me', authGuard, handleMe);
+export default router;
