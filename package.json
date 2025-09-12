@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "backend"
+    "backend",
+    "front-end"
   ],
   "scripts": {
-    "dev:fe": "next dev --turbopack",
+    "dev:fe": "npm run dev --workspace front-end",
     "dev:be": "npm run dev --workspace backend",
     "dev": "concurrently \"npm:dev:fe\" \"npm:dev:be\"",
     "build:fe": "next build",

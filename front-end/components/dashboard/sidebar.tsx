@@ -56,7 +56,7 @@ export default function Sidebar() {
                                     {section.providers.map((prov: string) => (
                                     <Link
                                         key={prov}
-                                        href={`/dashboard/${cat}/${prov}`}
+                                        href={`/dashboard/products/${cat}/${prov}`}
                                         className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                                             isActiveProvider(cat, prov) 
                                                 ? "bg-blue-50 text-blue-600 font-medium" 
