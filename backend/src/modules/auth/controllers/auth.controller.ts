@@ -3,9 +3,9 @@ import { login, signup, publicUser } from '../services/auth.service.js';
 import { env } from '../../../config/env.js';
 import { AuthenticatedRequest } from '../../../common/middleware/auth.js';
 
-export const handleSignup = (req: Request, res: Response) => {
+export const handleSignup = async (req: Request, res: Response) => {
   const { fname, lname, email, password } = (req as any).body;
-  const { user, token } = signup(fname, lname, email, password);
+  const { user, token } = await signup(fname, lname, email, password);
   res.cookie('accessToken', token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -14,9 +14,9 @@ export const handleSignup = (req: Request, res: Response) => {
   }).status(201).json({ user });
 };
 
-export const handleLogin = (req: Request, res: Response) => {
+export const handleLogin = async (req: Request, res: Response) => {
   const { email, password } = (req as any).body;
-  const { user, token } = login(email, password);
+  const { user, token } = await login(email, password);
   res.cookie('accessToken', token, {
     httpOnly: true,
     sameSite: 'lax',

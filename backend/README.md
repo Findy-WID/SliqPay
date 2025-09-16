@@ -30,6 +30,7 @@ backend/
         errorHandler.ts
       utils/
         logger.ts
+        redis.ts         # Redis client & helpers
     modules/
       auth/
         auth.schema.ts
@@ -54,7 +55,13 @@ Create `.env`:
 PORT=4000
 JWT_SECRET=change_this_to_a_long_random_string_at_least_32_chars
 NODE_ENV=development
+# Redis (optional in dev, required in prod)
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=
 ```
+For Redis Cloud, set the values from your provider and ensure network access.
 
 ## Install & Run
 From repo root (workspaces):
@@ -92,13 +99,13 @@ http://localhost:4000/api/v1
 ## Endpoints (Current)
 | Method | Path          | Auth | Description                 |
 |--------|---------------|------|-----------------------------|
-| GET    | /health       | none | Liveness check              |
+| GET    | /health       | none | Liveness check (+ Redis)    |
 | POST   | /auth/signup  | none | Create user (returns cookie)|
 | POST   | /auth/login   | none | Login (returns cookie)      |
 | POST   | /auth/logout  | any  | Clear access token cookie   |
 | GET    | /auth/me      | req  | Current user profile        |
 
-Access token: httpOnly cookie `accessToken` (15m, short-lived). No refresh yet.
+The health endpoint returns `{ services: { redis: 'up' | 'down' } }` indicating Redis connectivity.
 
 ## Example Requests
 Signup:
@@ -175,6 +182,11 @@ Uses pino. Change level via `LOG_LEVEL=debug`.
 - Always use HTTPS in production (cookies not secure otherwise).
 - Keep `JWT_SECRET` long & random; rotate periodically.
 - Add CORS origin whitelist before deployment.
+
+## Redis
+- Client initialized on server start (see `src/common/utils/redis.ts`).
+- Health check pings Redis and reports status.
+- Use helpers `cacheSetJSON(key, value, ttl?)` and `cacheGetJSON(key)` for simple caching.
 
 ## License
 Proprietary.
