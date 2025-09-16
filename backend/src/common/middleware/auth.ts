@@ -8,9 +8,20 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export async function authGuard(req: AuthenticatedRequest, _res: Response, next: NextFunction) {
-  const token = req.cookies?.accessToken;
-  if (!token) return next({ status: 401, message: 'Unauthorized' });
   try {
+    // Prefer session if present
+    const sess = (req as any).session;
+    if (sess?.data?.userId) {
+      const user = await UserRepository.findById(sess.data.userId);
+      if (user) {
+        req.user = { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName };
+        return next();
+      }
+    }
+
+    // Fallback to JWT cookie
+    const token = (req as any).cookies?.accessToken;
+    if (!token) return next({ status: 401, message: 'Unauthorized' });
     const payload: any = jwt.verify(token, env.JWT_SECRET);
     const userId = payload.sub as string;
     const user = await UserRepository.findById(userId);
@@ -23,9 +34,17 @@ export async function authGuard(req: AuthenticatedRequest, _res: Response, next:
 }
 
 export async function optionalAuth(req: AuthenticatedRequest, _res: Response, next: NextFunction) {
-  const token = req.cookies?.accessToken;
-  if (!token) return next();
   try {
+    const sess = (req as any).session;
+    if (sess?.data?.userId) {
+      const user = await UserRepository.findById(sess.data.userId);
+      if (user) {
+        req.user = { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName };
+        return next();
+      }
+    }
+    const token = (req as any).cookies?.accessToken;
+    if (!token) return next();
     const payload: any = jwt.verify(token, env.JWT_SECRET);
     const user = await UserRepository.findById(payload.sub as string);
     if (user) {

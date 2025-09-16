@@ -11,6 +11,14 @@ const schema = z.object({
   REDIS_USERNAME: z.string().default('default').optional(),
   REDIS_PASSWORD: z.string().optional(),
   REDIS_TLS: z.string().optional(),
+  // Email/password reset
+  EMAIL_FROM: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  RESET_TOKEN_TTL_SECONDS: z.coerce.number().optional(),
+  FRONTEND_URL: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

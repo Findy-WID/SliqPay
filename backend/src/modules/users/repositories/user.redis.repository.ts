@@ -31,15 +31,23 @@ export const UserRepositoryRedis = {
     return this.findById(id);
   },
 
-  async create(data: { email: string; firstName: string; lastName: string; passwordHash: string }): Promise<User> {
+  async create(data: { email: string; firstName: string; lastName: string; passwordHash: string; phone?: string; referralCode?: string }): Promise<User> {
     const c = getRedis();
     const id = randomUUID();
     const user: User = { id, createdAt: new Date(), ...data };
     const lower = data.email.toLowerCase();
-    await c.multi()
-      .set(USER_KEY(id), serialize(user))
-      .set(EMAIL_KEY(lower), id)
-      .exec();
+    await c.set(USER_KEY(id), serialize(user));
+    await c.set(EMAIL_KEY(lower), id);
     return user;
+  },
+
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    const c = getRedis();
+    const raw = await c.get(USER_KEY(id));
+    if (!raw) throw { status: 404, message: 'User not found' };
+    const user = deserialize(raw);
+    if (!user) throw { status: 404, message: 'User not found' };
+    user.passwordHash = passwordHash;
+    await c.set(USER_KEY(id), serialize(user));
   }
 };

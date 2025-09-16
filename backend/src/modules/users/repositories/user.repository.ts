@@ -30,7 +30,7 @@ export const UserRepository = {
     const raw = await c.get(userKey(id));
     return raw ? deserialize(JSON.parse(raw)) : null;
   },
-  async create(data: { email: string; firstName: string; lastName: string; passwordHash: string }): Promise<User> {
+  async create(data: { email: string; firstName: string; lastName: string; passwordHash: string; phone?: string; referralCode?: string }): Promise<User> {
     const c = getRedis();
     const emailLower = data.email.toLowerCase();
     const existing = await c.get(emailKey(emailLower));
@@ -43,5 +43,13 @@ export const UserRepository = {
     await c.set(userKey(id), JSON.stringify(serialize(user)));
     await c.set(emailKey(emailLower), id);
     return user;
+  },
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    const c = getRedis();
+    const raw = await c.get(userKey(id));
+    if (!raw) throw { status: 404, message: 'User not found' };
+    const user = deserialize(JSON.parse(raw));
+    user.passwordHash = passwordHash;
+    await c.set(userKey(id), JSON.stringify(serialize(user)));
   }
 };
