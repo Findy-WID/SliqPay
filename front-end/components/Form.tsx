@@ -204,16 +204,14 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Phone Number</label>
                 <input
                 type="tel"
-                inputMode="tel"
-                pattern="^\+[1-9]\\d{1,14}$"
                 className="w-full border rounded px-3 py-10"
                 placeholder="+2348012345678"
                 value={formInfos.phone}
-                onChange={(e) =>
-                    setFormInfos({ ...formInfos, phone: e.target.value })
-                }
-            />
-            {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
+                onChange={(e) => setFormInfos({ ...formInfos, phone: e.target.value })}
+                inputMode="tel"
+                autoComplete="tel"
+                />
+                {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
             </div>
             )}
 

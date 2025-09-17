@@ -16,38 +16,10 @@ function deserialize(raw: string | null): User | null {
   return { ...obj, createdAt: new Date(obj.createdAt) } as User;
 }
 
+// DEPRECATED: Use UserRepositoryPrisma for persistent user data.
 export const UserRepositoryRedis = {
-  async findById(id: string): Promise<User | null> {
-    const c = getRedis();
-    const raw = await c.get(USER_KEY(id));
-    return deserialize(raw);
-  },
-
-  async findByEmail(email: string): Promise<User | null> {
-    const c = getRedis();
-    const lower = email.toLowerCase();
-    const id = await c.get(EMAIL_KEY(lower));
-    if (!id) return null;
-    return this.findById(id);
-  },
-
-  async create(data: { email: string; firstName: string; lastName: string; passwordHash: string; phone?: string; referralCode?: string }): Promise<User> {
-    const c = getRedis();
-    const id = randomUUID();
-    const user: User = { id, createdAt: new Date(), ...data };
-    const lower = data.email.toLowerCase();
-    await c.set(USER_KEY(id), serialize(user));
-    await c.set(EMAIL_KEY(lower), id);
-    return user;
-  },
-
-  async updatePassword(id: string, passwordHash: string): Promise<void> {
-    const c = getRedis();
-    const raw = await c.get(USER_KEY(id));
-    if (!raw) throw { status: 404, message: 'User not found' };
-    const user = deserialize(raw);
-    if (!user) throw { status: 404, message: 'User not found' };
-    user.passwordHash = passwordHash;
-    await c.set(USER_KEY(id), serialize(user));
-  }
+  async findByEmail(_email: string) { throw new Error('UserRepositoryRedis is deprecated. Use Prisma.'); },
+  async findById(_id: string) { throw new Error('UserRepositoryRedis is deprecated. Use Prisma.'); },
+  async create(_data: any) { throw new Error('UserRepositoryRedis is deprecated. Use Prisma.'); },
+  async updatePassword(_id: string, _passwordHash: string) { throw new Error('UserRepositoryRedis is deprecated. Use Prisma.'); },
 };

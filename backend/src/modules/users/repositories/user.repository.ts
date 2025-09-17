@@ -16,40 +16,10 @@ function emailKey(emailLower: string) {
   return `user:email:${emailLower}`;
 }
 
+// DEPRECATED: Use UserRepositoryPrisma for persistent user data.
 export const UserRepository = {
-  async findByEmail(email: string): Promise<User | null> {
-    const c = getRedis();
-    const emailLower = email.toLowerCase();
-    const id = await c.get(emailKey(emailLower));
-    if (!id) return null;
-    const raw = await c.get(userKey(id));
-    return raw ? deserialize(JSON.parse(raw)) : null;
-  },
-  async findById(id: string): Promise<User | null> {
-    const c = getRedis();
-    const raw = await c.get(userKey(id));
-    return raw ? deserialize(JSON.parse(raw)) : null;
-  },
-  async create(data: { email: string; firstName: string; lastName: string; passwordHash: string; phone?: string; referralCode?: string }): Promise<User> {
-    const c = getRedis();
-    const emailLower = data.email.toLowerCase();
-    const existing = await c.get(emailKey(emailLower));
-    if (existing) {
-      throw { status: 400, message: 'Email already registered' };
-    }
-    const user: User = { id: randomUUID(), createdAt: new Date(), ...data };
-    const id = user.id;
-    // persist user and index by email
-    await c.set(userKey(id), JSON.stringify(serialize(user)));
-    await c.set(emailKey(emailLower), id);
-    return user;
-  },
-  async updatePassword(id: string, passwordHash: string): Promise<void> {
-    const c = getRedis();
-    const raw = await c.get(userKey(id));
-    if (!raw) throw { status: 404, message: 'User not found' };
-    const user = deserialize(JSON.parse(raw));
-    user.passwordHash = passwordHash;
-    await c.set(userKey(id), JSON.stringify(serialize(user)));
-  }
+  async findByEmail(_email: string) { throw new Error('UserRepository (in-memory/redis) is deprecated. Use Prisma.'); },
+  async findById(_id: string) { throw new Error('UserRepository (in-memory/redis) is deprecated. Use Prisma.'); },
+  async create(_data: any) { throw new Error('UserRepository (in-memory/redis) is deprecated. Use Prisma.'); },
+  async updatePassword(_id: string, _passwordHash: string) { throw new Error('UserRepository (in-memory/redis) is deprecated. Use Prisma.'); },
 };
