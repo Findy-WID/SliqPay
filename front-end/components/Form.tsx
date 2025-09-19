@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { z } from "zod";
+import { signupSchema, loginSchema, sanitizePhone } from "@/lib/validation/auth";
 
 type FormInfos = {
   fname: string;
@@ -22,7 +24,7 @@ interface FormProp {
 
 export default function Form({ formtype }: FormProp) {
     const showField = (field: string) => {
-        if (formtype === "signup") return true;
+        if (formtype === "signup") return ["fname","lname","email","phone","password","cPassword","refCode"].includes(field);
         if (formtype === "login") return field === "email" || field === "password";
         if (formtype === "forgot") return field === "email";
         return false;
@@ -67,29 +69,65 @@ export default function Form({ formtype }: FormProp) {
     });
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
     const router = useRouter();
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api/v1";
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg(null);
-        if (formtype === 'signup' && formInfos.password !== formInfos.cPassword) {
-            setErrorMsg('Passwords do not match');
-            return;
-        }
-        if (!formInfos.email || (formtype !== 'forgot' && !formInfos.password)) {
-            setErrorMsg('Email and password are required');
-            return;
-        }
+        setSuccessMsg(null);
+        setFieldErrors({});
         try {
             setLoading(true);
-            const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/login';
-            const payload: any = { email: formInfos.email, password: formInfos.password };
-            if (formtype === 'signup') {
-                payload.fname = formInfos.fname;
-                payload.lname = formInfos.lname;
+            let payload: any;
+            if (formtype === "signup") {
+              const parsed = signupSchema.safeParse({ ...formInfos, phone: sanitizePhone(formInfos.phone) });
+              if (!parsed.success) {
+                const fe: Record<string,string> = {};
+                const f = parsed.error.flatten();
+                Object.entries(f.fieldErrors).forEach(([k,v]) => { if (v && v.length) fe[k] = v[0]!; });
+                setFieldErrors(fe);
+                setErrorMsg("Please fix the highlighted fields");
+                return;
+              }
+              const v = parsed.data;
+              payload = { fname: v.fname, lname: v.lname, email: v.email, password: v.password, phone: v.phone || undefined, refCode: formInfos.refCode?.trim() || undefined };
+            } else if (formtype === "login") {
+              const parsed = loginSchema.safeParse({ email: formInfos.email, password: formInfos.password });
+              if (!parsed.success) {
+                const fe: Record<string,string> = {};
+                const f = parsed.error.flatten();
+                Object.entries(f.fieldErrors).forEach(([k,v]) => { if (v && v.length) fe[k] = v[0]!; });
+                setFieldErrors(fe);
+                setErrorMsg("Please fix the highlighted fields");
+                return;
+              }
+              const v = parsed.data;
+              payload = { email: v.email, password: v.password };
+            } else {
+              // forgot
+              const emailOnly = z.object({ email: z.string().trim().email("Enter a valid email address") });
+              const parsed = emailOnly.safeParse({ email: formInfos.email });
+              if (!parsed.success) {
+                const fe: Record<string,string> = {};
+                const f = parsed.error.flatten();
+                Object.entries(f.fieldErrors).forEach(([k,v]) => { if (v && v.length) fe[k] = v[0]!; });
+                setFieldErrors(fe);
+                setErrorMsg("Please provide a valid email");
+                return;
+              }
+              payload = { email: parsed.data.email };
             }
+
+            const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/forgotpassword';
             await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+            // success
+            if (formtype === 'forgot') {
+              setSuccessMsg('If the email exists, a reset link has been sent. Please check your inbox.');
+              return;
+            }
+            setFormInfos({ fname: "", lname: "", email: "", phone: "", password: "", cPassword: "", refCode: "" });
             router.push('/dashboard');
         } catch (err: any) {
             setErrorMsg(err.message || 'Something went wrong');
@@ -111,6 +149,7 @@ export default function Form({ formtype }: FormProp) {
                 <p className="text-sm text-gray-600">{subtitle}</p>
             </div>
             {errorMsg && <p className="text-sm text-red-600 mb-4" role="alert">{errorMsg}</p>}
+            {successMsg && <p className="text-sm text-green-600 mb-4" role="status">{successMsg}</p>}
 
             {showField("fname") && (
             <div className="mb-4">
@@ -124,6 +163,7 @@ export default function Form({ formtype }: FormProp) {
                         setFormInfos({ ...formInfos, fname: e.target.value })
                     }
                 />
+                {fieldErrors.fname && <p className="text-xs text-red-600 mt-1">{fieldErrors.fname}</p>}
             </div>
             )}
 
@@ -139,6 +179,7 @@ export default function Form({ formtype }: FormProp) {
                     setFormInfos({ ...formInfos, lname: e.target.value })
                 }
             />
+            {fieldErrors.lname && <p className="text-xs text-red-600 mt-1">{fieldErrors.lname}</p>}
             </div>
             )}
 
@@ -154,6 +195,7 @@ export default function Form({ formtype }: FormProp) {
                     setFormInfos({ ...formInfos, email: e.target.value })
                 }
             />
+            {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
             </div>
             )}
 
@@ -163,12 +205,13 @@ export default function Form({ formtype }: FormProp) {
                 <input
                 type="tel"
                 className="w-full border rounded px-3 py-10"
-                placeholder="+234 801 234 5678"
+                placeholder="+2348012345678"
                 value={formInfos.phone}
-                onChange={(e) =>
-                    setFormInfos({ ...formInfos, phone: e.target.value })
-                }
-            />
+                onChange={(e) => setFormInfos({ ...formInfos, phone: e.target.value })}
+                inputMode="tel"
+                autoComplete="tel"
+                />
+                {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
             </div>
             )}
 
@@ -184,6 +227,7 @@ export default function Form({ formtype }: FormProp) {
                     setFormInfos({ ...formInfos, password: e.target.value })
                 }
             />
+            {fieldErrors.password && <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>}
             </div>
             )}
 
@@ -199,6 +243,7 @@ export default function Form({ formtype }: FormProp) {
                     setFormInfos({ ...formInfos, cPassword: e.target.value })
                 }
             />
+            {fieldErrors.cPassword && <p className="text-xs text-red-600 mt-1">{fieldErrors.cPassword}</p>}
             </div>
             )}
 

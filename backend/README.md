@@ -12,6 +12,7 @@ Express + TypeScript API providing auth (signup/login/logout/me) and health chec
 - pino (logging)
 - helmet / cors / morgan (security + logging)
 - tsx (dev runner)
+- Redis (rate limiting, sessions) with in-memory fallback for local dev
 
 ## Project Structure
 ```
@@ -25,23 +26,27 @@ backend/
     common/
       middleware/
         validate.ts
-        auth.ts          # JWT guard (authGuard / optionalAuth)
+        auth.ts          # Session+JWT guard (authGuard / optionalAuth)
         notFound.ts
         errorHandler.ts
+        rateLimit.ts
+      session/
+        sessionStore.ts  # Redis-backed sessions (in-memory fallback)
       utils/
         logger.ts
+        redis.ts         # Redis client & helpers (in-memory fallback when REDIS_HOST unset)
     modules/
       auth/
-        auth.schema.ts
-        auth.route.ts
-        auth.controller.ts
-        auth.service.ts
+        schemas/
+        routes/
+        controllers/
+        services/
       users/
-        user.model.ts
-        user.repository.ts
+        schemas/
+        repositories/
       health/
-        health.controller.ts
-        health.route.ts
+        controllers/
+        routes/
     routes/
       index.ts
     app.ts
@@ -54,6 +59,24 @@ Create `.env`:
 PORT=4000
 JWT_SECRET=change_this_to_a_long_random_string_at_least_32_chars
 NODE_ENV=development
+# Redis (optional in dev, required in prod)
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=
+REDIS_TLS=false
+# Sessions
+SESSION_TTL_SECONDS=604800
+SESSION_COOKIE_NAME=sid
+# Email
+EMAIL_FROM=no-reply@sliqpay.com
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_pass
+# Password Reset
+RESET_TOKEN_TTL_SECONDS=900
+FRONTEND_URL=http://localhost:3000
 ```
 
 ## Install & Run
@@ -90,15 +113,17 @@ http://localhost:4000/api/v1
 ```
 
 ## Endpoints (Current)
-| Method | Path          | Auth | Description                 |
-|--------|---------------|------|-----------------------------|
-| GET    | /health       | none | Liveness check              |
-| POST   | /auth/signup  | none | Create user (returns cookie)|
-| POST   | /auth/login   | none | Login (returns cookie)      |
-| POST   | /auth/logout  | any  | Clear access token cookie   |
-| GET    | /auth/me      | req  | Current user profile        |
+| Method | Path                  | Auth | Description                 |
+|--------|-----------------------|------|-----------------------------|
+| GET    | /health               | none | Liveness check (+ Redis)    |
+| POST   | /auth/signup          | none | Create user (returns cookie)|
+| POST   | /auth/login           | none | Login (returns cookie)      |
+| POST   | /auth/logout          | any  | Clear access token cookie   |
+| GET    | /auth/me              | req  | Current user profile        |
+| POST   | /auth/forgotpassword  | none | Request a password reset link (email only, always returns ok) |
+| POST   | /auth/resetpassword   | none | Reset password with token and new password |
 
-Access token: httpOnly cookie `accessToken` (15m, short-lived). No refresh yet.
+The health endpoint returns `{ services: { redis: 'up' | 'down' } }` indicating Redis connectivity.
 
 ## Example Requests
 Signup:
@@ -125,6 +150,27 @@ Logout:
 ```
 curl -i -X POST http://localhost:4000/api/v1/auth/logout
 ```
+
+## Password Reset
+
+- POST `/auth/forgotpassword` — Request a password reset link (email only, always returns ok)
+- POST `/auth/resetpassword` — Reset password with token and new password
+
+Environment variables required for email sending and reset token TTL:
+```
+EMAIL_FROM=no-reply@sliqpay.com
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_pass
+RESET_TOKEN_TTL_SECONDS=900
+FRONTEND_URL=http://localhost:3000
+```
+
+**Flow:**
+1. User requests reset (forgotpassword) — receives email with link.
+2. User clicks link, submits new password (resetpassword).
+3. Token is single-use and expires after configured TTL.
 
 ## Auth Flow (Frontend)
 1. User submits signup/login form.
@@ -175,6 +221,15 @@ Uses pino. Change level via `LOG_LEVEL=debug`.
 - Always use HTTPS in production (cookies not secure otherwise).
 - Keep `JWT_SECRET` long & random; rotate periodically.
 - Add CORS origin whitelist before deployment.
+
+## Redis
+- Client initialized on server start (see `src/common/utils/redis.ts`).
+- Health check pings Redis and reports status.
+- Use helpers `cacheSetJSON(key, value, ttl?)` and `cacheGetJSON(key)` for simple caching.
+
+## Middleware
+- Sessions: Redis-backed TTL session store; cookie name `sid` (configurable). See `src/common/session/sessionStore.ts`.
+- Rate Limiting: Redis-backed fixed-window counters with standard headers. Global soft limit + stricter per-route limits (e.g., signup/login). See `src/common/middleware/rateLimit.ts`.
 
 ## License
 Proprietary.
