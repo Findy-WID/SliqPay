@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/components/ui/toast'
 import Link from 'next/link'
 
 export default function ForgotPasswordForm() {
