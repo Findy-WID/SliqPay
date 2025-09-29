@@ -13,10 +13,13 @@ export function publicUser(u: any) {
   return { id: u.id, email: u.email, firstName: u.first_name, lastName: u.last_name, createdAt: u.created_at };
 }
 
-export async function signup(fname: string, lname: string, email: string, password: string, phone?: string, referralCode?: string) {
+export async function signup(fname: string, lname: string, email: string, password: string, phone: string, referralCode?: string) {
   const existing = await Repo.findByEmail(email);
   if (existing) {
     throw { status: 400, message: 'Email already registered' };
+  }
+  if (!phone) {
+    throw { status: 400, message: 'Phone number is required' };
   }
   const passwordHash = bcrypt.hashSync(password, 10);
   const user = await Repo.create({ email, firstName: fname, lastName: lname, passwordHash, phone, referralCode });

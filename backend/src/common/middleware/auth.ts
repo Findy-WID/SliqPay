@@ -14,7 +14,7 @@ export async function authGuard(req: AuthenticatedRequest, _res: Response, next:
     if (sess?.data?.userId) {
       const user = await UserRepositoryPrisma.findById(sess.data.userId);
       if (user) {
-        req.user = { id: user.id, email: user.email, firstName: user.first_name || "", lastName: user.last_name || "" };
+        req.user = { id: user.id, email: user.email, firstName: user.first_name ?? undefined, lastName: user.last_name ?? undefined };
         return next();
       }
     }
@@ -26,7 +26,7 @@ export async function authGuard(req: AuthenticatedRequest, _res: Response, next:
     const userId = payload.sub as string;
     const user = await UserRepositoryPrisma.findById(userId);
     if (!user) return next({ status: 401, message: 'Unauthorized' });
-    req.user = { id: user.id, email: user.email, firstName: user.first_name || "", lastName: user.last_name || "" };
+  req.user = { id: user.id, email: user.email, firstName: user.first_name ?? undefined, lastName: user.last_name ?? undefined };
     return next();
   } catch {
     return next({ status: 401, message: 'Unauthorized' });
@@ -39,7 +39,7 @@ export async function optionalAuth(req: AuthenticatedRequest, _res: Response, ne
     if (sess?.data?.userId) {
       const user = await UserRepositoryPrisma.findById(sess.data.userId);
       if (user) {
-        req.user = { id: user.id, email: user.email, firstName: user.first_name || "", lastName: user.last_name || "" };
+        req.user = { id: user.id, email: user.email, firstName: user.first_name ?? undefined, lastName: user.last_name ?? undefined };
         return next();
       }
     }
@@ -48,7 +48,7 @@ export async function optionalAuth(req: AuthenticatedRequest, _res: Response, ne
     const payload: any = jwt.verify(token, env.JWT_SECRET);
     const user = await UserRepositoryPrisma.findById(payload.sub as string);
     if (user) {
-      req.user = { id: user.id, email: user.email, firstName: user.first_name || "", lastName: user.last_name || "" };
+      req.user = { id: user.id, email: user.email, firstName: user.first_name ?? undefined, lastName: user.last_name ?? undefined };
     }
   } catch {}
   next();
