@@ -7,22 +7,25 @@
     "front-end"
   ],
   "scripts": {
-    "dev:fe": "npm run dev --workspace front-end",
-    "dev:be": "npm run dev --workspace backend",
+    "dev:fe": "npm run dev -w front-end",
+    "dev:be": "npm run dev -w backend",
     "dev": "concurrently \"npm:dev:fe\" \"npm:dev:be\"",
-    "build:fe": "next build",
-    "build:be": "npm run build --workspace backend",
+    "build:fe": "npm run build -w front-end",
+    "build:be": "npm run build -w backend",
     "build": "npm run build:fe && npm run build:be",
-    "start:fe": "next start",
-    "start:be": "npm run start --workspace backend",
+    "start:fe": "npm run start -w front-end",
+    "start:be": "npm run start -w backend",
     "start": "concurrently \"npm:start:fe\" \"npm:start:be\"",
-    "lint": "next lint && npm run lint --workspace backend",
-    "typecheck": "tsc --noEmit && npm run typecheck --workspace backend"
+    "lint": "npm run lint -w front-end && npm run lint -w backend",
+    "typecheck": "npm run typecheck -w front-end && npm run typecheck -w backend"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
+    "@lucia-auth/adapter-prisma": "^4.0.1",
+    "@prisma/client": "^6.16.2",
     "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/vite": "^4.1.11",
+    "lucia": "^3.2.2",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

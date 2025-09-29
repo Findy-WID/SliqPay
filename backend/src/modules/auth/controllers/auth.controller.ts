@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../../../common/middleware/auth.js';
 import { createSession, setSessionCookie, clearSessionCookie, destroySession } from '../../../common/session/sessionStore.js';
 import { sendMail } from '../../../common/utils/email.js';
 import { createResetToken, consumeResetToken } from '../services/resetToken.service.js';
-import { UserRepository } from '../../users/repositories/user.repository.js';
+import { UserRepositoryPrisma } from '../../users/repositories/user.prisma.repository.js';
 import bcrypt from 'bcryptjs';
 
 export const handleSignup = async (req: Request, res: Response) => {
@@ -22,16 +22,21 @@ export const handleSignup = async (req: Request, res: Response) => {
 };
 
 export const handleLogin = async (req: Request, res: Response) => {
-  const { email, password } = (req as any).body;
-  const { user, token } = await login(email, password);
-  const sess = await createSession({ userId: user.id });
-  setSessionCookie(res, sess.id);
-  res.cookie('accessToken', token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: env.NODE_ENV === 'production',
-    maxAge: 15 * 60 * 1000
-  }).json({ user });
+  try {
+    const { email, password } = (req as any).body;
+    const { user, token } = await login(email, password);
+    const sess = await createSession({ userId: user.id });
+    setSessionCookie(res, sess.id);
+    res.cookie('accessToken', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000
+    }).json({ user });
+  } catch (error: any) {
+    const statusCode = error.status || 400;
+    res.status(statusCode).json({ error: { message: error.message } });
+  }
 };
 
 export const handleLogout = async (req: Request, res: Response) => {
@@ -66,7 +71,7 @@ export const handleReset = async (_req: Request, res: Response) => {
 
 export const handleResetRequest = async (req: Request, res: Response) => {
   const { email } = (req as any).body;
-  const user = await UserRepository.findByEmail(email);
+  const user = await UserRepositoryPrisma.findByEmail(email);
   if (!user) return res.json({ ok: true }); // Do not reveal user existence
   const token = await createResetToken(user.id);
   const base = env.FRONTEND_URL || 'http://localhost:3000';
