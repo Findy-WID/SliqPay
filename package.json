@@ -22,7 +22,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
     "@lucia-auth/adapter-prisma": "^4.0.1",
-    "@prisma/client": "^6.16.2",
+    "@prisma/client": "^5.17.0",
     "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/vite": "^4.1.11",
     "lucia": "^3.2.2",
