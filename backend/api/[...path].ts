@@ -20,10 +20,17 @@ export const config = {
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   await ensureRedis();
 
-  if (req.url && !req.url.startsWith('/api/')) {
-    const normalized = req.url.startsWith('/') ? req.url : `/${req.url}`;
-    req.url = `/api${normalized}`;
+  const originalUrl = req.url ?? '/';
+  const [pathname, search = ''] = originalUrl.split('?');
+  let nextPath = pathname;
+
+  if (pathname.startsWith('/backend/api')) {
+    nextPath = pathname.replace('/backend/api', '/api') || '/api';
+  } else if (!pathname.startsWith('/api')) {
+    nextPath = pathname === '' ? '/api' : `/api${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
   }
+
+  req.url = search ? `${nextPath}?${search}` : nextPath;
 
   return new Promise<void>((resolve, reject) => {
     res.on('finish', resolve);
