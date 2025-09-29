@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/toast'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const { toast } = useToast()
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -22,8 +22,7 @@ export default function ForgotPasswordForm() {
       })
 
       if (res.ok) {
-        toast({
-          title: "Check your email",
+        toast.success("Check your email", {
           description: "If an account exists with that email, you'll receive password reset instructions."
         })
         setEmail('')
@@ -32,9 +31,7 @@ export default function ForgotPasswordForm() {
         throw new Error(data.error || 'Something went wrong')
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: error.message
       })
     } finally {

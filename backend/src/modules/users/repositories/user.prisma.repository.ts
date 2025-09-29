@@ -1,4 +1,4 @@
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '../../../lib/prisma.js';
 
 export const UserRepositoryPrisma = {
   async findByEmail(email: string) {
@@ -7,11 +7,11 @@ export const UserRepositoryPrisma = {
   async findById(id: string) {
     return prisma.user.findUnique({ where: { id } });
   },
-  async create(data: { email: string; firstName?: string; lastName?: string; passwordHash: string; phone?: string; referralCode?: string }) {
+  async create(data: { email: string; firstName?: string; lastName?: string; passwordHash: string; phone?: string | null; referralCode?: string }) {
     return prisma.user.create({
       data: {
         email: data.email,
-        phone: data.phone,
+        phone: data.phone || "",
         password_hash: data.passwordHash,
         first_name: data.firstName,
         last_name: data.lastName,
