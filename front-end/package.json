@@ -73,6 +73,8 @@
     "typescript": "5.2.2",
     "uuid": "^13.0.0",
     "vaul": "^0.9.9",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "lucia": "^3.2.2",
+    "@lucia-auth/adapter-prisma": "^4.0.1"
   }
 }
