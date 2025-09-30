@@ -137,14 +137,36 @@ export default function Form({ formtype }: FormProp) {
             }
 
             const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/forgotpassword';
-            await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+            console.log(`Submitting form to ${endpoint}`);
+            const response = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+            console.log("API response received:", response);
+            
             // success
             if (formtype === 'forgot') {
               setSuccessMsg('If the email exists, a reset link has been sent. Please check your inbox.');
               return;
             }
+            
+            // Reset form
             setFormInfos({ fname: "", lname: "", email: "", phone: "", password: "", cPassword: "", refCode: "" });
-            setTimeout(() => router.push('/dashboard'), 100);
+            
+            // Set success message
+            setSuccessMsg(formtype === 'signup' ? 'Account created! Redirecting to dashboard...' : 'Login successful! Redirecting to dashboard...');
+            
+            // Use multiple strategies for redirection to ensure it works
+            console.log("Attempting to redirect to dashboard");
+            
+            // Strategy 1: Use Next.js router with a delay
+            setTimeout(() => {
+              console.log("Executing delayed router.push");
+              router.push('/dashboard');
+            }, 500);
+            
+            // Strategy 2: Use window.location as fallback with a slightly longer delay
+            setTimeout(() => {
+              console.log("Executing fallback window.location redirect");
+              window.location.href = '/dashboard';
+            }, 1000);
         } catch (err: any) {
             const message = err.message || 'Something went wrong';
             toast({

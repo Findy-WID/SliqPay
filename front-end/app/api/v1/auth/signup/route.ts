@@ -28,7 +28,20 @@ export async function POST(req: NextRequest) {
     
     const result = await signup(fname, lname, email, password, phone, refCode);
     console.log("Signup successful for:", email);
-    return NextResponse.json(result, { status: 201 });
+    
+    // Create a response with the token set as a cookie
+    const response = NextResponse.json(result, { status: 201 });
+    response.cookies.set({
+      name: 'accessToken',
+      value: result.token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Only in production
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 15 * 60, // 15 minutes in seconds
+    });
+    
+    return response;
   } catch (error: any) {
     console.error("Signup error:", error);
     const status = error.status || 500;
