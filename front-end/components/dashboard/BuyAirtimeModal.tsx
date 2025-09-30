@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [phone, setPhone] = useState("");
@@ -6,14 +6,57 @@ export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onCl
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
 
   if (!open) return null;
+
+  // Effect to check transaction status
+  useEffect(() => {
+    // If we have a transaction ID but status is not 'delivered' yet, poll for updates
+    if (transactionId && (transactionStatus === 'pending' || !transactionStatus)) {
+      const checkStatus = async () => {
+        try {
+          const res = await fetch(`/api/v1/vtu/mtn?request_id=${transactionId}`);
+          const data = await res.json();
+          
+          if (res.ok && data.transaction) {
+            setTransactionStatus(data.transaction.status);
+            
+            if (data.transaction.status === 'delivered') {
+              setResult("Airtime purchase successful! Your phone has been credited.");
+            } else if (data.transaction.status === 'failed') {
+              setError("Transaction failed. Please try again.");
+            }
+          }
+        } catch (err) {
+          console.error("Error checking transaction status:", err);
+        }
+      };
+      
+      // Poll every 5 seconds, but only up to 6 times (30 seconds total)
+      let attempts = 0;
+      const statusInterval = setInterval(() => {
+        attempts++;
+        if (attempts <= 6) {
+          checkStatus();
+        } else {
+          clearInterval(statusInterval);
+        }
+      }, 5000);
+      
+      return () => clearInterval(statusInterval);
+    }
+  }, [transactionId, transactionStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
     setError(null);
+    setTransactionId(null);
+    setTransactionStatus(null);
+    
     try {
       const res = await fetch("/api/v1/vtu/mtn/", {
         method: "POST",
@@ -21,8 +64,17 @@ export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onCl
         body: JSON.stringify({ phone, amount }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setResult("Airtime purchase successful!");
+      
+      if (res.ok && data.success) {
+        // Store transaction ID for status checks
+        setTransactionId(data.transaction?.id || null);
+        setTransactionStatus(data.transaction?.status || null);
+        
+        if (data.transaction?.status === 'delivered') {
+          setResult("Airtime purchase successful! Your phone has been credited.");
+        } else {
+          setResult("Transaction submitted. Checking status...");
+        }
       } else {
         setError(data.error || "Failed to purchase airtime");
       }
@@ -62,8 +114,13 @@ export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onCl
               placeholder="100"
             />
           </div>
-          {result && <div className="text-green-600 text-sm">{result}</div>}
-          {error && <div className="text-red-600 text-sm">{error}</div>}
+          {transactionStatus === 'pending' && (
+            <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+              <p className="text-yellow-700 text-sm">Transaction processing...</p>
+            </div>
+          )}
+          {result && <div className="bg-green-50 p-3 rounded border border-green-200 text-green-700 text-sm">{result}</div>}
+          {error && <div className="bg-red-50 p-3 rounded border border-red-200 text-red-700 text-sm">{error}</div>}
           <div className="flex gap-2 mt-4">
             <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded" disabled={loading}>
               {loading ? "Processing..." : "Buy Airtime"}
