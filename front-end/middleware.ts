@@ -48,20 +48,20 @@ export function middleware(req: NextRequest) {
     // Default policy for all content
     "default-src 'self'",
     
-    // Allow scripts from self and inline scripts (needed for Next.js)
-    "script-src 'self' 'unsafe-inline'",
+    // Allow scripts from self, inline scripts, and unsafe-eval (needed for Next.js dev)
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     
-    // Allow styles from self and inline styles (needed for styled-components and other libraries)
-    "style-src 'self' 'unsafe-inline'",
+    // Allow styles from self, inline styles, and Google Fonts
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     
-    // For images - allow self, data URIs (for small images), and blob (for processed images)
-    "img-src 'self' data: blob:",
+    // For images - allow self, data URIs, blob, and external images
+    "img-src 'self' data: blob: https:",
     
-    // For fonts - allow self
-    "font-src 'self'",
+    // For fonts - allow self and Google Fonts
+    "font-src 'self' https://fonts.gstatic.com",
     
-    // For connections - allow self (for API calls)
-    "connect-src 'self'",
+    // For connections - allow self and external APIs
+    "connect-src 'self' https:",
     
     // Block embedding in frames except from same origin
     "frame-ancestors 'self'",
