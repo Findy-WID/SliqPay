@@ -57,11 +57,11 @@ export function middleware(req: NextRequest) {
     // For images - allow self, data URIs, blob, and external images
     "img-src 'self' data: blob: https:",
     
-    // For fonts - allow self and Google Fonts
+        // For fonts - allow self and Google Fonts
     "font-src 'self' https://fonts.gstatic.com",
     
-    // For connections - allow self and external APIs
-    "connect-src 'self' https:",
+    // For connections - allow self, external APIs, and localhost in development
+    "connect-src 'self' https: http://localhost:* http://localhost:4000",
     
     // Block embedding in frames except from same origin
     "frame-ancestors 'self'",
