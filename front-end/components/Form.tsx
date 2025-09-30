@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { z } from "zod";
@@ -24,6 +24,20 @@ interface FormProp {
 }
 
 export default function Form({ formtype }: FormProp) {
+    // Add error logging for debugging
+    const [renderError, setRenderError] = useState<string | null>(null);
+
+    useEffect(() => {
+        try {
+            // Log the form type and environment info
+            console.log("Form rendered with type:", formtype);
+            console.log("Environment:", process.env.NODE_ENV);
+        } catch (error) {
+            console.error("Error in useEffect:", error);
+            setRenderError(error instanceof Error ? error.message : "Unknown error");
+        }
+    }, [formtype]);
+
     const showField = (field: string) => {
         if (formtype === "signup") return ["fname","lname","email","phone","password","cPassword","refCode"].includes(field);
         if (formtype === "login") return field === "email" || field === "password";
@@ -145,10 +159,23 @@ export default function Form({ formtype }: FormProp) {
 
     return (
         <div className="min-h-screen bg-[#f4fdf8] flex flex-col justify-center items-center p-6 space-y-12">
+        {/* Show render errors if any */}
+        {renderError && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 max-w-md mx-auto">
+                <p><strong>Error rendering form:</strong> {renderError}</p>
+            </div>
+        )}
+        
+        {/* Use next/image or ensure image is properly deployed */}
         <img
             src="/Sliqpayvisual12.png"
             alt="SliqPay"
             className="h-12 mx-auto mb-4"
+            onError={(e) => {
+                e.currentTarget.onerror = null; 
+                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='32' viewBox='0 0 100 32'%3E%3Crect width='100' height='32' fill='%23eee'/%3E%3Ctext x='50' y='20' font-family='Arial' font-size='12' text-anchor='middle' fill='%23333'%3ESliqPay%3C/text%3E%3C/svg%3E";
+                console.error("Failed to load image");
+            }}
         />   
         <form onSubmit={onSubmit} className="px-8 pt-6 pb-12 mb-4 w-full max-w-md bg-white shadow-md rounded-lg">
             <div className="text-center mb-6">
@@ -163,7 +190,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">First Name</label>
                 <input
                     type="text"
-                    className="w-full border rounded px-3 py-10"
+                    className="w-full border rounded px-3 py-3"
                     placeholder="John"
                     value={formInfos.fname}
                     onChange={(e) =>
@@ -179,7 +206,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Last Name</label>
                 <input
                 type="text"
-                className="w-full border rounded px-3 py-10"
+                className="w-full border rounded px-3 py-3"
                 placeholder="Doe"
                 value={formInfos.lname}
                 onChange={(e) =>
@@ -195,7 +222,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Email</label>
                 <input
                 type="email"
-                className="w-full border rounded px-3 py-10"
+                className="w-full border rounded px-3 py-3"
                 placeholder="john@example.com"
                 value={formInfos.email}
                 onChange={(e) =>
@@ -211,7 +238,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Phone Number</label>
                 <input
                 type="tel"
-                className="w-full border rounded px-3 py-10"
+                className="w-full border rounded px-3 py-3"
                 placeholder="+2348012345678"
                 value={formInfos.phone}
                 onChange={(e) => setFormInfos({ ...formInfos, phone: e.target.value })}
@@ -227,7 +254,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Password</label>
                 <input
                 type="password"
-                className="w-full border rounded px-3 py-10"
+                className="w-full border rounded px-3 py-3"
                 placeholder="••••••••"
                 value={formInfos.password}
                 onChange={(e) =>
@@ -243,7 +270,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Confirm Password</label>
                 <input
                 type="password"
-                className="w-full border rounded px-3 py-10"
+                className="w-full border rounded px-3 py-3"
                 placeholder="••••••••"
                 value={formInfos.cPassword}
                 onChange={(e) =>
@@ -259,7 +286,7 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Referral Code (Optional)</label>
                 <input
                 type="text"
-                className="w-full border rounded px-3 py-10"
+                className="w-full border rounded px-3 py-3"
                 placeholder="REF123"
                 value={formInfos.refCode}
                 onChange={(e) =>
