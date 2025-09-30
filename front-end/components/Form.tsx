@@ -130,7 +130,7 @@ export default function Form({ formtype }: FormProp) {
               return;
             }
             setFormInfos({ fname: "", lname: "", email: "", phone: "", password: "", cPassword: "", refCode: "" });
-            setTimeout(() => router.push('/dashboard'), 100);
+            router.push('/dashboard');
         } catch (err: any) {
             const message = err.message || 'Something went wrong';
             toast({
