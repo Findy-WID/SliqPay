@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
   "builds": [
     {
       "src": "backend/api/**/*.ts",
