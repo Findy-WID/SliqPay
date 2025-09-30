@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { z } from "zod";
 import { signupSchema, loginSchema, sanitizePhone } from "@/lib/validation/auth";
+import { useToast } from "@/hooks/use-toast";
 
 type FormInfos = {
   fname: string;
@@ -72,6 +73,7 @@ export default function Form({ formtype }: FormProp) {
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
     const router = useRouter();
+    const { toast } = useToast();
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,7 +132,12 @@ export default function Form({ formtype }: FormProp) {
             setFormInfos({ fname: "", lname: "", email: "", phone: "", password: "", cPassword: "", refCode: "" });
             router.push('/dashboard');
         } catch (err: any) {
-            setErrorMsg(err.message || 'Something went wrong');
+            const message = err.message || 'Something went wrong';
+            toast({
+                title: "Error",
+                description: message,
+                variant: "destructive",
+            });
         } finally {
             setLoading(false);
         }
