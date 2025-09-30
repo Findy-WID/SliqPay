@@ -8,8 +8,8 @@ prisma.$connect()
   .then(() => {
     console.log('Successfully connected to database');
   })
-  .catch((e) => {
-    console.error('Failed to connect to database:', e);
+  .catch((error: unknown) => {
+    console.error('Failed to connect to database:', error);
     process.exit(1);
   });
 

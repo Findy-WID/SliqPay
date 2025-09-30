@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 export default function ResetPasswordForm() {
@@ -11,7 +11,7 @@ export default function ResetPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { toast } = useToast()
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -48,8 +48,7 @@ export default function ResetPasswordForm() {
       const data = await res.json()
 
       if (res.ok) {
-        toast({
-          title: "Password reset successful",
+        toast.success("Password reset successful", {
           description: "You can now login with your new password"
         })
         router.push('/auth/login')
@@ -57,9 +56,7 @@ export default function ResetPasswordForm() {
         throw new Error(data.error?.message || 'Something went wrong')
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: error.message
       })
     } finally {
@@ -116,3 +113,4 @@ export default function ResetPasswordForm() {
       </CardContent>
     </Card>
   )
+}

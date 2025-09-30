@@ -1,23 +1,14 @@
 {
   "version": 2,
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
   "builds": [
     {
-      "src": "backend/src/server.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "front-end/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/backend/src/server.ts"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/front-end/:path*"
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "rootDirectory": "front-end"
+      }
     }
   ]
 }

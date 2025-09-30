@@ -6,12 +6,12 @@ const mockProducts = [
   { id: 3, amount: 500, description: "₦500 Airtime" },
 ];
 
-export default function ProductPage({
+export default async function ProductPage({
   params,
 }: {
-  params: { category: string; provider: string };
+  params: Promise<{ category: string; provider: string }>;
 }) {
-  const { category, provider } = params;
+  const { category, provider } = await params;
 
   return (
     <div>
