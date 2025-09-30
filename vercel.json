@@ -5,11 +5,17 @@
   "builds": [
     {
       "src": "backend/api/**/*.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "rootDirectory": "backend"
+      }
     },
     {
       "src": "front-end/package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/next",
+      "config": {
+        "rootDirectory": "front-end"
+      }
     }
   ],
   "rewrites": [
