@@ -7,17 +7,29 @@ function sign(userId: string) {
   return jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '15m' });
 }
 
+export function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, env.JWT_SECRET) as { sub: string };
+  } catch {
+    return null;
+  }
+}
+
 export function publicUser(u: any) {
   return { id: u.id, email: u.email, firstName: u.first_name, lastName: u.last_name, createdAt: u.created_at };
 }
 
 export async function signup(fname: string, lname: string, email: string, password: string, phone?: string, referralCode?: string) {
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingEmail) {
     throw { status: 400, message: 'Email already registered' };
   }
   if (!phone) {
     throw { status: 400, message: 'Phone number is required' };
+  }
+  const existingPhone = await prisma.user.findUnique({ where: { phone } });
+  if (existingPhone) {
+    throw { status: 400, message: 'Phone number already registered' };
   }
   const passwordHash = bcrypt.hashSync(password, 10);
   const user = await prisma.user.create({
