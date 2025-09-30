@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { cspMiddleware } from './middleware/csp';
 
 // Routes that require auth
 const protectedPrefixes = ['/dashboard'];
@@ -39,9 +40,45 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  // Apply CSP headers to the response
+  const response = NextResponse.next();
+  
+  // Define CSP directives
+  const csp = [
+    // Default policy for all content
+    "default-src 'self'",
+    
+    // Allow scripts from self and inline scripts (needed for Next.js)
+    "script-src 'self' 'unsafe-inline'",
+    
+    // Allow styles from self and inline styles (needed for styled-components and other libraries)
+    "style-src 'self' 'unsafe-inline'",
+    
+    // For images - allow self, data URIs (for small images), and blob (for processed images)
+    "img-src 'self' data: blob:",
+    
+    // For fonts - allow self
+    "font-src 'self'",
+    
+    // For connections - allow self (for API calls)
+    "connect-src 'self'",
+    
+    // Block embedding in frames except from same origin
+    "frame-ancestors 'self'",
+    
+    // Allow forms to be submitted only to same origin
+    "form-action 'self'",
+    
+    // Block plugins like Flash, Java, etc.
+    "object-src 'none'",
+  ].join("; ");
+
+  // Set the CSP header
+  response.headers.set('Content-Security-Policy', csp);
+  
+  return response;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/:path*', '/api/v1/:path*']
+  matcher: ['/dashboard/:path*', '/auth/:path*', '/api/v1/:path*', '/']
 };

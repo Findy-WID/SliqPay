@@ -153,20 +153,25 @@ export default function Form({ formtype }: FormProp) {
             // Set success message
             setSuccessMsg(formtype === 'signup' ? 'Account created! Redirecting to dashboard...' : 'Login successful! Redirecting to dashboard...');
             
-            // Use multiple strategies for redirection to ensure it works
             console.log("Attempting to redirect to dashboard");
             
-            // Strategy 1: Use Next.js router with a delay
-            setTimeout(() => {
-              console.log("Executing delayed router.push");
+            // Use a safer approach that doesn't trigger CSP issues
+            // Immediately try router push first
+            try {
+              console.log("Executing router.push");
               router.push('/dashboard');
-            }, 500);
-            
-            // Strategy 2: Use window.location as fallback with a slightly longer delay
-            setTimeout(() => {
-              console.log("Executing fallback window.location redirect");
-              window.location.href = '/dashboard';
-            }, 1000);
+            } catch (error: unknown) {
+              console.error("Error with router.push:", error);
+              
+              // If immediate push fails, use a plain function in setTimeout (not a string)
+              const redirectToPath = () => {
+                console.log("Executing delayed redirect");
+                window.location.href = '/dashboard';
+              };
+              
+              // Use the function reference, not a string
+              setTimeout(redirectToPath, 1000);
+            }
         } catch (err: any) {
             const message = err.message || 'Something went wrong';
             toast({
