@@ -45,7 +45,16 @@ export interface VtpassVtuResponse {
 
 import { env } from '@/lib/env';
 
-export async function sendVtu({ serviceID, phone, amount, request_id }: { serviceID: string; phone: string; amount: string; request_id: string }) {
+export async function sendVtu({ serviceID, phone, amount, request_id }: { serviceID: string; phone: string; amount: string | number; request_id: string }) {
+  // Ensure amount is a string
+  const amountString = typeof amount === 'number' ? amount.toString() : amount;
+  
+  // Validate phone number format - must be 10-11 digits
+  const cleanPhone = phone.replace(/\D/g, '');
+  if (!/^\d{10,11}$/.test(cleanPhone)) {
+    throw new Error(`Invalid phone number format: ${phone}`);
+  }
+  
   const apiKey = env.VTPASS_API_KEY;
   const publicKey = env.VTPASS_PUBLIC_KEY;
   const secretKey = env.VTPASS_SECRET_KEY;
@@ -57,8 +66,8 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
 
   const payload: VtpassVtuPayload = {
     serviceID,
-    phone,
-    amount,
+    phone: cleanPhone,
+    amount: amountString,
     request_id,
   };
 

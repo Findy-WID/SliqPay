@@ -38,12 +38,30 @@ export default function ProductCard({ products }: { products: Product[] }) {
       const product = products.find((p) => p.id === selected);
       if (!product) throw new Error("No product selected");
       if (!phone) throw new Error("Phone number is required");
+      
+      // Validate phone number format before sending
+      const phoneNumber = phone.trim().replace(/\s+/g, "");
+      if (!/^\d{10,11}$/.test(phoneNumber)) {
+        throw new Error("Please enter a valid 10-11 digit phone number");
+      }
+      
+      console.log(`Submitting purchase: Phone=${phoneNumber}, Amount=${product.amount}`);
+      
       const res = await fetch("/api/v1/vtu/mtn/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, amount: product.amount }),
+        credentials: "include", // Include cookies for authentication
+        body: JSON.stringify({ phone: phoneNumber, amount: product.amount.toString() }),
       });
+      
       const data = await res.json();
+      console.log("API response:", data);
+      
+      if (res.status === 401) {
+        setError("Authentication error. Please log out and log in again.");
+        return;
+      }
+      
       if (res.ok) {
         setResult("Airtime purchase successful!");
         setPhone("");
@@ -51,8 +69,10 @@ export default function ProductCard({ products }: { products: Product[] }) {
         // Do not reset selected here, so user can send again easily
       } else {
         setError(data.error || "Failed to purchase airtime");
+        console.error("Error details:", data);
       }
     } catch (err: any) {
+      console.error("Purchase error:", err);
       setError(err.message || "Network error");
     } finally {
       setLoading(false);

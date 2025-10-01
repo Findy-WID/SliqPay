@@ -22,6 +22,24 @@ export async function POST(req: NextRequest) {
       );
     }
     
+    // Ensure amount is a valid number or string representation of a number
+    const amountValue = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(amountValue) || amountValue <= 0) {
+      return NextResponse.json(
+        { error: 'Amount must be a valid positive number' },
+        { status: 400 }
+      );
+    }
+    
+    // Clean and validate phone number format
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (!/^\d{10,11}$/.test(cleanPhone)) {
+      return NextResponse.json(
+        { error: 'Phone number must be 10-11 digits' },
+        { status: 400 }
+      );
+    }
+    
     // Generate a unique request ID for this transaction
     // Format: YYYYMMDDHHMMSSxxxxx (where xxxxx is a random 5-digit number)
     const date = new Date();
@@ -34,13 +52,13 @@ export async function POST(req: NextRequest) {
     const random = Math.floor(10000 + Math.random() * 90000); // 5-digit random number
     const request_id = `${year}${month}${day}${hours}${minutes}${seconds}${random}`;
     
-    console.log(`Processing MTN VTU purchase: Phone=${phone}, Amount=${amount}, RequestID=${request_id}`);
+    console.log(`Processing MTN VTU purchase: Phone=${cleanPhone}, Amount=${amountValue}, RequestID=${request_id}, Raw inputs: Phone=${phone}, Amount=${amount}`);
     
     // Send the VTU request to the payment provider
     const result = await sendVtu({
       serviceID: 'mtn', 
-      phone, 
-      amount,
+      phone: cleanPhone, 
+      amount: amountValue.toString(),
       request_id
     });
     
