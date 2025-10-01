@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { networkProviderServiceIDs, NetworkProvider } from '@/lib/serviceIds';
 // import { sendMtnVtu } from "@/lib/vtpass"; // Not needed on client, handled via API route
 
 type Product = { id: number; amount: number; description: string };
+
+// Default to MTN if no provider is specified
+const DEFAULT_PROVIDER = "MTN";
 
 function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () => void; message: string }) {
   if (!open) return null;
@@ -22,7 +26,15 @@ function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () =
   );
 }
 
-export default function ProductCard({ products }: { products: Product[] }) {
+export default function ProductCard({ 
+  products, 
+  provider = DEFAULT_PROVIDER,
+  category = "airtime"
+}: { 
+  products: Product[];
+  provider?: string;
+  category?: string;
+}) {
   const [selected, setSelected] = useState<number | null>(null);
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,9 +57,9 @@ export default function ProductCard({ products }: { products: Product[] }) {
         throw new Error("Please enter a valid 10-11 digit phone number");
       }
       
-      console.log(`Submitting purchase: Phone=${phoneNumber}, Amount=${product.amount}`);
+      console.log(`Submitting purchase: Provider=${provider}, Phone=${phoneNumber}, Amount=${product.amount}`);
       
-      const res = await fetch("/api/v1/vtu/mtn/", {
+      const res = await fetch(`/api/v1/vtu/${provider.toLowerCase()}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // Include cookies for authentication
@@ -89,11 +101,12 @@ export default function ProductCard({ products }: { products: Product[] }) {
   return (
     <div className="w-full max-w-xl mx-auto mt-6">
       <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-700 font-medium">Testing VTPass Integration</p>
+        <p className="text-sm text-yellow-700 font-medium">Testing {provider} {category}</p>
         <ul className="mt-2 text-xs text-yellow-800">
           <li>• For successful test: use phone 08011111111</li>
           <li>• For pending status: use phone 201000000000</li>
           <li>• For failed test: use any other number</li>
+          <li>• Provider Service ID: {networkProviderServiceIDs[provider as NetworkProvider] || provider.toLowerCase()}</li>
         </ul>
       </div>
       <div className="flex gap-3 mb-6">
