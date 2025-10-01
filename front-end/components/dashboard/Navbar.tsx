@@ -16,13 +16,28 @@ export default function Navbar() {
     async function logout() {
       try {
         setLoading(true);
-        const base = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api/v1';
-        await fetch(`${base}/auth/logout`, { method: 'POST', credentials: 'include' });
+        
+        // In production, use the API route
+        const isProduction = process.env.NODE_ENV === 'production';
+        const apiPath = isProduction ? '/api/v1/auth/logout' : 'http://localhost:4000/api/v1/auth/logout';
+        
+        console.log(`Logging out using: ${apiPath}`);
+        
+        await fetch(apiPath, { 
+          method: 'POST', 
+          credentials: 'include' 
+        });
+        
+        console.log('Logout successful, redirecting to login page');
       } catch (e) {
-        // swallow
+        console.error('Logout error:', e);
+        // continue with logout even if API call fails
       } finally {
         setLoading(false);
-        router.push('/auth/login');
+        // Use a small delay before redirecting to ensure the cookie is cleared
+        setTimeout(() => {
+          router.push('/auth/login');
+        }, 100);
       }
     }
 
