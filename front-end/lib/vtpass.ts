@@ -45,6 +45,18 @@ export interface VtpassVtuResponse {
 
 import { env } from '@/lib/env';
 
+/**
+ * Sends a VTU (airtime) request to the VTPass API
+ * Documentation: https://vtpass.com/documentation/mtn-airtime-vtu-api/
+ * 
+ * For successful sandbox testing, use these test phone numbers:
+ * - 08011111111: Returns a successful response
+ * - 201000000000: Simulates a pending response
+ * - 500000000000: Simulates an unexpected response
+ * - 400000000000: Simulates no response
+ * - 300000000000: Simulates a timeout scenario
+ * - Any other number: Simulates a failed transaction
+ */
 export async function sendVtu({ serviceID, phone, amount, request_id }: { serviceID: string; phone: string; amount: string | number; request_id: string }) {
   // Ensure amount is a string
   const amountString = typeof amount === 'number' ? amount.toString() : amount;
@@ -71,10 +83,10 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
     request_id,
   };
 
+  // For POST requests, use api-key and secret-key as per documentation
   const headers = {
     "api-key": apiKey,
-    "public-key": publicKey,
-    "secret-key": secretKey,
+    "secret-key": secretKey, // For POST requests we use secret-key, not public-key
     "Content-Type": "application/json",
     Accept: "application/json",
   } as Record<string, string>;
@@ -86,10 +98,14 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
   console.log("- Amount:", amountString);
   console.log("- Request ID:", request_id);
   console.log("- API Key:", apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "NOT_SET");
-  console.log("- Public Key:", publicKey ? `${publicKey.substring(0, 4)}...${publicKey.substring(publicKey.length - 4)}` : "NOT_SET");
-  console.log("- Secret Key:", secretKey ? "PRESENT" : "NOT_SET");
+  console.log("- Secret Key:", secretKey ? `${secretKey.substring(0, 4)}...${secretKey.substring(secretKey.length - 4)}` : "NOT_SET");
   console.log("- Base URL:", baseUrl);
   console.log("- Full URL:", `${baseUrl}/pay`);
+  
+  // Validate required credentials
+  if (!apiKey || !secretKey) {
+    throw new Error("VTPass API credentials are not properly configured. Please check your environment variables.");
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -147,47 +163,84 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
   }
 }
 
-export const requeryTransaction = async (payload: { request_id: string }) => {
-  const VTPASS_API_KEY = env.VTPASS_API_KEY;
-  const VTPASS_SECRET_KEY = env.VTPASS_SECRET_KEY;
-  const VTPASS_BASE_URL = env.VTPASS_BASE_URL;
+/**
+ * Query the status of a transaction using the VTPass API
+ * Documentation: https://vtpass.com/documentation/mtn-airtime-vtu-api/
+ */
+/**
+ * Query the status of a transaction using the VTPass API
+ * Documentation: https://vtpass.com/documentation/mtn-airtime-vtu-api/
+ */
+export async function requeryTransaction({ request_id }: { request_id: string }) {
+  const apiKey = env.VTPASS_API_KEY;
+  const secretKey = env.VTPASS_SECRET_KEY; // For POST requests we use secret-key as per documentation
+  const baseUrl = env.VTPASS_BASE_URL;
 
-  if (!VTPASS_API_KEY || !VTPASS_SECRET_KEY || !VTPASS_BASE_URL) {
-    throw new Error("VTpass API credentials or base URL are not set in environment variables.");
+  if (!apiKey || !secretKey || !baseUrl) {
+    throw new Error("VTpass API keys or base URL are not set in environment variables");
   }
+  
+  console.log(`Requerying transaction with request_id: ${request_id}`);
+  
+  const headers = {
+    "api-key": apiKey,
+    "secret-key": secretKey,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  } as Record<string, string>;
+
+  // Debug log (without showing full secrets)
+  console.log("VTPass Requery Details:");
+  console.log("- Request ID:", request_id);
+  console.log("- API Key:", apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "NOT_SET");
+  console.log("- Secret Key:", secretKey ? `${secretKey.substring(0, 4)}...${secretKey.substring(secretKey.length - 4)}` : "NOT_SET");
+  console.log("- Base URL:", baseUrl);
+  console.log("- Full URL:", `${baseUrl}/requery`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const response = await fetch(`${VTPASS_BASE_URL}/requery`, {
+    console.log("Making VTPass requery request with payload:", JSON.stringify({ request_id }));
+    
+    const response = await fetch(`${baseUrl}/requery`, {
       method: "POST",
-      headers: {
-        "api-key": VTPASS_API_KEY,
-        "secret-key": VTPASS_SECRET_KEY,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ request_id: payload.request_id }),
+      headers,
+      body: JSON.stringify({ request_id }),
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Fetch error requerying transaction:", data);
-      throw new Error(data?.response_description || data?.message || "Failed to requery transaction.");
+    
+    console.log("VTPass requery HTTP status:", response.status, response.statusText);
+    
+    // Try to get the response data
+    let data;
+    try {
+      data = await response.json();
+      console.log("VTPass requery raw response:", JSON.stringify(data));
+    } catch (jsonError) {
+      console.error("Failed to parse VTPass requery response as JSON:", await response.text());
+      throw new Error("Invalid response from VTPass API");
     }
 
+    if (!response.ok || data?.code !== "000") {
+      console.error("VTPass API requery error response:", data);
+      throw new Error(
+        data?.response_description || 
+        data?.message || 
+        `VTPass API requery error (${response.status})`
+      );
+    }
+
+    console.log("VTPass API requery successful response:", data);
     return data;
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === "AbortError") {
-      throw new Error("Transaction requery timed out. Please try again later.");
+      throw new Error("VTPass API requery request timed out");
     }
-    console.error("Unknown error requerying transaction:", error);
-    throw new Error("An unknown error occurred while requerying the transaction.");
+    console.error("VTPass API requery failed:", error);
+    throw new Error(error.message || "Failed to check transaction status");
   }
-};
+}

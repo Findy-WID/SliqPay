@@ -28,5 +28,15 @@
 ```bash
 git clone https://github.com/your-username/sliqpay.git
 cd sliqpay
+
+# Install dependencies
+cd front-end
+npm install
+
+# Create .env file with the following content:
+# VTPASS_API_KEY=your_api_key
+# VTPASS_PUBLIC_KEY=your_public_key
+# VTPASS_SECRET_KEY=your_secret_key
+# VTPASS_BASE_URL=https://sandbox.vtpass.com/api  # Use https://vtpass.com/api for production
 npm install
 npm run dev

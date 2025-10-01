@@ -88,6 +88,14 @@ export default function ProductCard({ products }: { products: Product[] }) {
 
   return (
     <div className="w-full max-w-xl mx-auto mt-6">
+      <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-700 font-medium">Testing VTPass Integration</p>
+        <ul className="mt-2 text-xs text-yellow-800">
+          <li>• For successful test: use phone 08011111111</li>
+          <li>• For pending status: use phone 201000000000</li>
+          <li>• For failed test: use any other number</li>
+        </ul>
+      </div>
       <div className="flex gap-3 mb-6">
         {products.map((pro) => (
           <button
