@@ -20,37 +20,52 @@ export function publicUser(u: any) {
 }
 
 export async function signup(fname: string, lname: string, email: string, password: string, phone?: string, referralCode?: string) {
-  const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) {
-    throw { status: 400, message: 'Email already registered' };
-  }
-  if (!phone) {
-    throw { status: 400, message: 'Phone number is required' };
-  }
-  const existingPhone = await prisma.user.findUnique({ where: { phone } });
-  if (existingPhone) {
-    throw { status: 400, message: 'Phone number already registered' };
-  }
-  const passwordHash = bcrypt.hashSync(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      first_name: fname,
-      last_name: lname,
-      password_hash: passwordHash,
-      phone,
-      referral_code: referralCode,
+  try {
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      throw { status: 400, message: 'Email already registered' };
     }
-  });
-  const token = sign(user.id);
-  return { user: publicUser(user), token };
+    
+    // Phone validation - adding a default value if not provided
+    const phoneToUse = phone || '';
+    if (!phoneToUse) {
+      console.warn('Phone number not provided during signup');
+    } else {
+      const existingPhone = await prisma.user.findUnique({ where: { phone: phoneToUse } });
+      if (existingPhone) {
+        throw { status: 400, message: 'Phone number already registered' };
+      }
+    }
+    
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        first_name: fname,
+        last_name: lname,
+        password_hash: passwordHash,
+        phone: phoneToUse, // Use the default empty string if undefined
+        referral_code: referralCode,
+      }
+    });
+    const token = sign(user.id);
+    return { user: publicUser(user), token };
+  } catch (error) {
+    console.error("Signup error:", error);
+    throw error;
+  }
 }
 
 export async function login(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    throw { status: 401, message: 'Invalid credentials' };
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+      throw { status: 401, message: 'Invalid credentials' };
+    }
+    const token = sign(user.id);
+    return { user: publicUser(user), token };
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
   }
-  const token = sign(user.id);
-  return { user: publicUser(user), token };
 }

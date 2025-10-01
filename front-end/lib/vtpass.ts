@@ -5,11 +5,51 @@ export interface VtpassVtuPayload {
   request_id: string; // unique per transaction
 }
 
+export interface VtpassVtuResponse {
+  code: string;
+  content: {
+    transactions: {
+      status: string;
+      product_name: string;
+      unique_element: string;
+      unit_price: string;
+      quantity: number;
+      service_verification: null;
+      channel: string;
+      commission: number;
+      total_amount: number;
+      discount: null;
+      type: string;
+      email: string;
+      phone: string;
+      name: null;
+      convinience_fee: number;
+      amount: string;
+      platform: string;
+      method: string;
+      transactionId: string;
+      commission_details: {
+        amount: number;
+        rate: string;
+        rate_type: string;
+        computation_type: string;
+      };
+    };
+  };
+  response_description: string;
+  requestId: string;
+  amount: number;
+  transaction_date: string;
+  purchased_code: string;
+}
+
+import { env } from '@/lib/env';
+
 export async function sendVtu({ serviceID, phone, amount, request_id }: { serviceID: string; phone: string; amount: string; request_id: string }) {
-  const apiKey = process.env.VTPASS_API_KEY;
-  const publicKey = process.env.VTPASS_PUBLIC_KEY;
-  const secretKey = process.env.VTPASS_SECRET_KEY;
-  const baseUrl = process.env.VTPASS_BASE_URL;
+  const apiKey = env.VTPASS_API_KEY;
+  const publicKey = env.VTPASS_PUBLIC_KEY;
+  const secretKey = env.VTPASS_SECRET_KEY;
+  const baseUrl = env.VTPASS_BASE_URL;
 
   if (!apiKey || !publicKey || !secretKey || !baseUrl) {
     throw new Error("VTpass API keys or base URL are not set in environment variables");
@@ -70,9 +110,9 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
 }
 
 export const requeryTransaction = async (payload: { request_id: string }) => {
-  const VTPASS_API_KEY = process.env.VTPASS_API_KEY;
-  const VTPASS_SECRET_KEY = process.env.VTPASS_SECRET_KEY;
-  const VTPASS_BASE_URL = process.env.VTPASS_BASE_URL;
+  const VTPASS_API_KEY = env.VTPASS_API_KEY;
+  const VTPASS_SECRET_KEY = env.VTPASS_SECRET_KEY;
+  const VTPASS_BASE_URL = env.VTPASS_BASE_URL;
 
   if (!VTPASS_API_KEY || !VTPASS_SECRET_KEY || !VTPASS_BASE_URL) {
     throw new Error("VTpass API credentials or base URL are not set in environment variables.");
