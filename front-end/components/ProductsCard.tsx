@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { networkProviderServiceIDs, NetworkProvider } from '@/lib/serviceIds';
 // import { sendMtnVtu } from "@/lib/vtpass"; // Not needed on client, handled via API route
 
 type Product = { id: number; amount: number; description: string };
+
+// Default to MTN if no provider is specified
+const DEFAULT_PROVIDER = "MTN";
 
 function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () => void; message: string }) {
   if (!open) return null;
@@ -22,7 +26,15 @@ function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () =
   );
 }
 
-export default function ProductCard({ products }: { products: Product[] }) {
+export default function ProductCard({ 
+  products, 
+  provider = DEFAULT_PROVIDER,
+  category = "airtime"
+}: { 
+  products: Product[];
+  provider?: string;
+  category?: string;
+}) {
   const [selected, setSelected] = useState<number | null>(null);
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,21 +50,48 @@ export default function ProductCard({ products }: { products: Product[] }) {
       const product = products.find((p) => p.id === selected);
       if (!product) throw new Error("No product selected");
       if (!phone) throw new Error("Phone number is required");
-      const res = await fetch("/api/v1/vtu/mtn/", {
+      
+      // Validate phone number format before sending
+      const phoneNumber = phone.trim().replace(/\s+/g, "");
+      if (!/^\d{10,11}$/.test(phoneNumber)) {
+        throw new Error("Please enter a valid 10-11 digit phone number");
+      }
+      
+      console.log(`Submitting purchase: Provider=${provider}, Phone=${phoneNumber}, Amount=${product.amount}`);
+      
+      const res = await fetch(`/api/v1/vtu/${provider.toLowerCase()}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, amount: product.amount }),
+        credentials: "include", // Include cookies for authentication
+        body: JSON.stringify({ phone: phoneNumber, amount: product.amount.toString() }),
       });
+      
       const data = await res.json();
+      console.log("API response:", data);
+      
+      if (res.status === 401) {
+        setError("Authentication error. Please log out and log in again.");
+        return;
+      }
+      
       if (res.ok) {
         setResult("Airtime purchase successful!");
         setPhone("");
         setShowSuccess(true);
         // Do not reset selected here, so user can send again easily
       } else {
-        setError(data.error || "Failed to purchase airtime");
+        // Check for specific error patterns
+        if (data.error && data.error.includes("Transaction failed")) {
+          setError("Transaction failed. Please verify your phone number is correct and try again.");
+        } else if (data.error && data.error.includes("Invalid phone")) {
+          setError("Please enter a valid phone number in the correct format.");
+        } else {
+          setError(data.error || "Failed to purchase airtime");
+        }
+        console.error("Error details:", data);
       }
     } catch (err: any) {
+      console.error("Purchase error:", err);
       setError(err.message || "Network error");
     } finally {
       setLoading(false);
@@ -61,6 +100,15 @@ export default function ProductCard({ products }: { products: Product[] }) {
 
   return (
     <div className="w-full max-w-xl mx-auto mt-6">
+      <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-700 font-medium">Testing {provider} {category}</p>
+        <ul className="mt-2 text-xs text-yellow-800">
+          <li>• For successful test: use phone 08011111111</li>
+          <li>• For pending status: use phone 201000000000</li>
+          <li>• For failed test: use any other number</li>
+          <li>• Provider Service ID: {networkProviderServiceIDs[provider as NetworkProvider] || provider.toLowerCase()}</li>
+        </ul>
+      </div>
       <div className="flex gap-3 mb-6">
         {products.map((pro) => (
           <button

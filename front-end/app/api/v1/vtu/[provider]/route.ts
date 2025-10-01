@@ -1,8 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendVtu, requeryTransaction } from '@/lib/vtpass';
+import { networkProviderServiceIDs, NetworkProvider } from '@/lib/serviceIds';
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest, 
+  { params }: { params: { provider: string } }
+) {
   try {
+    // Get the provider from the URL params and normalize it
+    let providerParam = params.provider.toLowerCase();
+    
+    // Map provider route parameter to proper case NetworkProvider
+    const providerMapping: Record<string, NetworkProvider> = {
+      'mtn': 'MTN',
+      'glo': 'Glo',
+      'airtel': 'Airtel',
+      '9mobile': '9Mobile',
+      'etisalat': '9Mobile' // Map both etisalat and 9mobile to 9Mobile
+    };
+    
+    const providerName = providerMapping[providerParam];
+    
+    if (!providerName) {
+      return NextResponse.json(
+        { error: `Unknown provider: ${params.provider}` }, 
+        { status: 400 }
+      );
+    }
+    
+    // Map the provider name to its service ID
+    const serviceID = networkProviderServiceIDs[providerName];
+    
+    console.log(`Provider: ${providerParam} -> ${providerName} -> Service ID: ${serviceID}`);
+    
     // Get the authorization token
     const token = req.cookies.get('accessToken')?.value;
     
@@ -52,21 +82,21 @@ export async function POST(req: NextRequest) {
     const random = Math.floor(10000 + Math.random() * 90000); // 5-digit random number
     const request_id = `${year}${month}${day}${hours}${minutes}${seconds}${random}`;
     
-    console.log(`Processing MTN VTU purchase: Phone=${cleanPhone}, Amount=${amountValue}, RequestID=${request_id}, Raw inputs: Phone=${phone}, Amount=${amount}`);
+    console.log(`Processing ${providerName} VTU purchase: Phone=${cleanPhone}, Amount=${amountValue}, RequestID=${request_id}, Raw inputs: Phone=${phone}, Amount=${amount}`);
     
     // Send the VTU request to the payment provider
     let result;
     try {
       result = await sendVtu({
-        serviceID: 'mtn', 
+        serviceID, 
         phone: cleanPhone, 
         amount: amountValue.toString(),
         request_id
       });
       
-      console.log('VTPass API response received:', result);
+      console.log(`${providerName} VTPass API response received:`, result);
     } catch (vtuError: any) {
-      console.error('VTU API call failed:', vtuError);
+      console.error(`${providerName} VTU API call failed:`, vtuError);
       return NextResponse.json(
         { error: vtuError.message || 'Failed to connect to payment provider' },
         { status: 500 }
@@ -81,9 +111,9 @@ export async function POST(req: NextRequest) {
         transaction: {
           id: request_id,
           transactionId: result.content?.transactions?.transactionId,
-          phone,
-          amount,
-          provider: 'MTN',
+          phone: cleanPhone,
+          amount: amountValue,
+          provider: providerName,
           status: result.content?.transactions?.status,
           date: result.transaction_date || new Date().toISOString()
         },
@@ -92,7 +122,7 @@ export async function POST(req: NextRequest) {
     } else {
       // If the result doesn't have the expected success code
       const errorMsg = result?.response_description || 'Transaction processing failed';
-      console.error('VTPass error response:', errorMsg, result);
+      console.error(`${providerName} VTPass error response:`, errorMsg, result);
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
   } catch (error: any) {
@@ -107,8 +137,32 @@ export async function POST(req: NextRequest) {
 }
 
 // Add a route to query transaction status
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { provider: string } }
+) {
   try {
+    // Get the provider from the URL params and normalize it
+    let providerParam = params.provider.toLowerCase();
+    
+    // Map provider route parameter to proper case NetworkProvider
+    const providerMapping: Record<string, NetworkProvider> = {
+      'mtn': 'MTN',
+      'glo': 'Glo',
+      'airtel': 'Airtel',
+      '9mobile': '9Mobile',
+      'etisalat': '9Mobile' // Map both etisalat and 9mobile to 9Mobile
+    };
+    
+    const providerName = providerMapping[providerParam];
+    
+    if (!providerName) {
+      return NextResponse.json(
+        { error: `Unknown provider: ${params.provider}` }, 
+        { status: 400 }
+      );
+    }
+    
     // Get the authorization token
     const token = req.cookies.get('accessToken')?.value;
     
@@ -127,12 +181,12 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`Requerying transaction status for request_id: ${request_id}`);
+    console.log(`Requerying ${providerName} transaction status for request_id: ${request_id}`);
     
     // Query the transaction status
     const result = await requeryTransaction({ request_id });
     
-    console.log('VTPass requery response:', result);
+    console.log(`${providerName} VTPass requery response:`, result);
     
     if (result && result.code === '000') {
       return NextResponse.json({ 
@@ -144,13 +198,14 @@ export async function GET(req: NextRequest) {
           transactionId: result.content?.transactions?.transactionId,
           status: result.content?.transactions?.status,
           amount: result.amount,
+          provider: providerName,
           date: result.transaction_date
         },
         raw: result
       });
     } else {
       const errorMsg = result?.response_description || 'Failed to query transaction status';
-      console.error('VTPass requery error:', errorMsg, result);
+      console.error(`${providerName} VTPass requery error:`, errorMsg, result);
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
   } catch (error: any) {

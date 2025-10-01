@@ -6,12 +6,12 @@ const mockProducts = [
   { id: 3, amount: 500, description: "₦500 Airtime" },
 ];
 
-export default async function ProductPage({
+export default function ProductPage({
   params,
 }: {
-  params: Promise<{ category: string; provider: string }>;
+  params: { category: string; provider: string };
 }) {
-  const { category, provider } = await params;
+  const { category, provider } = params;
 
   return (
     <div>
@@ -29,12 +29,11 @@ export default async function ProductPage({
       </h1>
       <p>Product details for {provider} {category}</p>
 
-      {/* Pass products to a client component */}
-      <ProductCard products={mockProducts} />
+      {/* Pass products and provider info to a client component */}
+      <ProductCard products={mockProducts} provider={provider} category={category} />
     </div>
   );
 }
-
 
 export function generateStaticParams() {
   return [

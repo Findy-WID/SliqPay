@@ -4,7 +4,7 @@ import { cspMiddleware } from './middleware/csp';
 // Routes that require auth
 const protectedPrefixes = ['/dashboard'];
 // API routes that require auth
-const protectedApiRoutes = ['/api/v1/accounts', '/api/v1/transactions'];
+const protectedApiRoutes = ['/api/v1/accounts', '/api/v1/transactions', '/api/v1/vtu'];
 // Auth pages that redirect to dashboard if already logged in
 const authPages = ['/auth/login', '/auth/signup'];
 // Auth pages that are always accessible
