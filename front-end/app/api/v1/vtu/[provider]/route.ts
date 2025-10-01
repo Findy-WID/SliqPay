@@ -7,18 +7,31 @@ export async function POST(
   { params }: { params: { provider: string } }
 ) {
   try {
-    // Get the provider from the URL params
-    const providerName = params.provider as NetworkProvider;
+    // Get the provider from the URL params and normalize it
+    let providerParam = params.provider.toLowerCase();
+    
+    // Map provider route parameter to proper case NetworkProvider
+    const providerMapping: Record<string, NetworkProvider> = {
+      'mtn': 'MTN',
+      'glo': 'Glo',
+      'airtel': 'Airtel',
+      '9mobile': '9Mobile',
+      'etisalat': '9Mobile' // Map both etisalat and 9mobile to 9Mobile
+    };
+    
+    const providerName = providerMapping[providerParam];
+    
+    if (!providerName) {
+      return NextResponse.json(
+        { error: `Unknown provider: ${params.provider}` }, 
+        { status: 400 }
+      );
+    }
     
     // Map the provider name to its service ID
     const serviceID = networkProviderServiceIDs[providerName];
     
-    if (!serviceID) {
-      return NextResponse.json(
-        { error: `Unknown provider: ${providerName}` }, 
-        { status: 400 }
-      );
-    }
+    console.log(`Provider: ${providerParam} -> ${providerName} -> Service ID: ${serviceID}`);
     
     // Get the authorization token
     const token = req.cookies.get('accessToken')?.value;
@@ -129,8 +142,26 @@ export async function GET(
   { params }: { params: { provider: string } }
 ) {
   try {
-    // Get the provider from the URL params
-    const providerName = params.provider as NetworkProvider;
+    // Get the provider from the URL params and normalize it
+    let providerParam = params.provider.toLowerCase();
+    
+    // Map provider route parameter to proper case NetworkProvider
+    const providerMapping: Record<string, NetworkProvider> = {
+      'mtn': 'MTN',
+      'glo': 'Glo',
+      'airtel': 'Airtel',
+      '9mobile': '9Mobile',
+      'etisalat': '9Mobile' // Map both etisalat and 9mobile to 9Mobile
+    };
+    
+    const providerName = providerMapping[providerParam];
+    
+    if (!providerName) {
+      return NextResponse.json(
+        { error: `Unknown provider: ${params.provider}` }, 
+        { status: 400 }
+      );
+    }
     
     // Get the authorization token
     const token = req.cookies.get('accessToken')?.value;

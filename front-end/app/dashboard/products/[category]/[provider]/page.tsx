@@ -9,9 +9,9 @@ const mockProducts = [
 export default function ProductPage({
   params,
 }: {
-  params: Promise<{ category: string; provider: string }>;
+  params: { category: string; provider: string };
 }) {
-  const { category, provider } = await params;
+  const { category, provider } = params;
 
   return (
     <div>
@@ -33,7 +33,7 @@ export default function ProductPage({
       <ProductCard products={mockProducts} provider={provider} category={category} />
     </div>
   );
-
+}
 
 export function generateStaticParams() {
   return [

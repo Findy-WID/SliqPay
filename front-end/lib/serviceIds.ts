@@ -8,7 +8,7 @@ export const networkProviderServiceIDs: Record<NetworkProvider, string> = {
   'MTN': 'mtn',
   'Glo': 'glo',
   'Airtel': 'airtel',
-  '9Mobile': '9mobile', // Note: this was previously Etisalat in Nigeria
+  '9Mobile': 'etisalat', // VTPass still uses the old 'etisalat' service ID
 };
 
 /**
@@ -19,7 +19,7 @@ export const dataServiceIDs: Record<NetworkProvider, string> = {
   'MTN': 'mtn-data',
   'Glo': 'glo-data',
   'Airtel': 'airtel-data',
-  '9Mobile': '9mobile-data',
+  '9Mobile': 'etisalat-data', // VTPass still uses the old 'etisalat' service ID
 };
 
 /**
