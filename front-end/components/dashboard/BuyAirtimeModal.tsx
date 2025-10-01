@@ -17,8 +17,16 @@ export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onCl
     if (transactionId && (transactionStatus === 'pending' || !transactionStatus)) {
       const checkStatus = async () => {
         try {
-          const res = await fetch(`/api/v1/vtu/mtn?request_id=${transactionId}`);
+          const res = await fetch(`/api/v1/vtu/mtn?request_id=${transactionId}`, {
+            credentials: "include" // Include cookies for authentication
+          });
           const data = await res.json();
+          
+          if (res.status === 401) {
+            setError("Authentication error while checking status. Please log out and log in again.");
+            console.error("Auth error during status check:", data);
+            return;
+          }
           
           if (res.ok && data.transaction) {
             setTransactionStatus(data.transaction.status);
@@ -61,9 +69,17 @@ export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onCl
       const res = await fetch("/api/v1/vtu/mtn/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({ phone, amount }),
       });
+      
       const data = await res.json();
+      
+      if (res.status === 401) {
+        setError("Authentication error. Please log out and log in again.");
+        console.error("Auth error during airtime purchase:", data);
+        return;
+      }
       
       if (res.ok && data.success) {
         // Store transaction ID for status checks
@@ -77,8 +93,10 @@ export default function BuyAirtimeModal({ open, onClose }: { open: boolean; onCl
         }
       } else {
         setError(data.error || "Failed to purchase airtime");
+        console.error("Error response:", data);
       }
     } catch (err: any) {
+      console.error("Network error during airtime purchase:", err);
       setError(err.message || "Network error");
     } finally {
       setLoading(false);
