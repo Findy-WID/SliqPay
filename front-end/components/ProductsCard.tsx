@@ -68,7 +68,14 @@ export default function ProductCard({ products }: { products: Product[] }) {
         setShowSuccess(true);
         // Do not reset selected here, so user can send again easily
       } else {
-        setError(data.error || "Failed to purchase airtime");
+        // Check for specific error patterns
+        if (data.error && data.error.includes("Transaction failed")) {
+          setError("Transaction failed. Please verify your phone number is correct and try again.");
+        } else if (data.error && data.error.includes("Invalid phone")) {
+          setError("Please enter a valid phone number in the correct format.");
+        } else {
+          setError(data.error || "Failed to purchase airtime");
+        }
         console.error("Error details:", data);
       }
     } catch (err: any) {

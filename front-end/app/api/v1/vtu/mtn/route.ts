@@ -55,14 +55,23 @@ export async function POST(req: NextRequest) {
     console.log(`Processing MTN VTU purchase: Phone=${cleanPhone}, Amount=${amountValue}, RequestID=${request_id}, Raw inputs: Phone=${phone}, Amount=${amount}`);
     
     // Send the VTU request to the payment provider
-    const result = await sendVtu({
-      serviceID: 'mtn', 
-      phone: cleanPhone, 
-      amount: amountValue.toString(),
-      request_id
-    });
-    
-    console.log('VTPass API response:', result);
+    let result;
+    try {
+      result = await sendVtu({
+        serviceID: 'mtn', 
+        phone: cleanPhone, 
+        amount: amountValue.toString(),
+        request_id
+      });
+      
+      console.log('VTPass API response received:', result);
+    } catch (vtuError: any) {
+      console.error('VTU API call failed:', vtuError);
+      return NextResponse.json(
+        { error: vtuError.message || 'Failed to connect to payment provider' },
+        { status: 500 }
+      );
+    }
     
     // Check if the result has the expected format and success code
     if (result && result.code === '000') {

@@ -79,17 +79,24 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
     Accept: "application/json",
   } as Record<string, string>;
 
-  // Debug: log VTpass env vars and URL
-  console.log("VTPASS_API_KEY", apiKey);
-  console.log("VTPASS_PUBLIC_KEY", publicKey);
-  console.log("VTPASS_SECRET_KEY", secretKey);
-  console.log("VTPASS_BASE_URL", baseUrl);
-  console.log("VTpass full URL", `${baseUrl}/pay`);
+  // Debug: log VTpass request details (without full secrets)
+  console.log("VTPass Request Details:");
+  console.log("- Service ID:", serviceID);
+  console.log("- Phone:", cleanPhone);
+  console.log("- Amount:", amountString);
+  console.log("- Request ID:", request_id);
+  console.log("- API Key:", apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "NOT_SET");
+  console.log("- Public Key:", publicKey ? `${publicKey.substring(0, 4)}...${publicKey.substring(publicKey.length - 4)}` : "NOT_SET");
+  console.log("- Secret Key:", secretKey ? "PRESENT" : "NOT_SET");
+  console.log("- Base URL:", baseUrl);
+  console.log("- Full URL:", `${baseUrl}/pay`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
+    console.log("Making VTPass API request with payload:", JSON.stringify(payload));
+    
     const response = await fetch(`${baseUrl}/pay`, {
       method: "POST",
       headers,
@@ -98,23 +105,45 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
     });
 
     clearTimeout(timeoutId);
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("VTpass API error response:", data);
-      throw new Error(data?.response_description || data?.message || "VTpass API error");
+    
+    console.log("VTPass HTTP status:", response.status, response.statusText);
+    
+    // Try to get the response data
+    let data;
+    try {
+      data = await response.json();
+      console.log("VTPass raw response:", JSON.stringify(data));
+    } catch (jsonError) {
+      console.error("Failed to parse VTPass response as JSON:", await response.text());
+      throw new Error("Invalid response from VTPass API");
     }
 
-    console.log("VTpass API response:", data);
+    // Check for specific error patterns in the VTPass response
+    if (data?.response_description?.includes("TRANSACTION FAILED")) {
+      console.error("VTPass transaction failed:", data);
+      throw new Error("Transaction failed. Please check your phone number and try again.");
+    }
+    
+    if (!response.ok || data?.code !== "000") {
+      console.error("VTPass API error response:", data);
+      throw new Error(
+        data?.response_description || 
+        data?.message || 
+        `VTPass API error (${response.status})`
+      );
+    }
+
+    console.log("VTPass API successful response:", data);
     return data;
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === "AbortError") {
-      throw new Error("VTpass API request timed out");
+      throw new Error("VTPass API request timed out");
     }
-    // Re-throw other errors so callers see the real VTpass message (e.g., INVALID CREDENTIALS)
-    throw error;
+    // Log the full error for debugging
+    console.error("VTPass API call failed:", error);
+    // Re-throw with a more user-friendly message if possible
+    throw new Error(error.message || "Failed to process airtime purchase");
   }
 }
 
