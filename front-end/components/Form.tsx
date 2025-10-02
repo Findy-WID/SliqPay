@@ -30,8 +30,7 @@ export default function Form({ formtype }: FormProp) {
     useEffect(() => {
         try {
             // Log the form type and environment info
-            console.log("Form rendered with type:", formtype);
-            console.log("Environment:", process.env.NODE_ENV);
+           
         } catch (error) {
             console.error("Error in useEffect:", error);
             setRenderError(error instanceof Error ? error.message : "Unknown error");
@@ -137,9 +136,9 @@ export default function Form({ formtype }: FormProp) {
             }
 
             const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/forgotpassword';
-            console.log(`Submitting form to ${endpoint}`);
+        
             const response = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
-            console.log("API response received:", response);
+          
             
             // success
             if (formtype === 'forgot') {
@@ -153,19 +152,19 @@ export default function Form({ formtype }: FormProp) {
             // Set success message
             setSuccessMsg(formtype === 'signup' ? 'Account created! Redirecting to dashboard...' : 'Login successful! Redirecting to dashboard...');
             
-            console.log("Attempting to redirect to dashboard");
+          
             
             // Use a safer approach that doesn't trigger CSP issues
             // Immediately try router push first
             try {
-              console.log("Executing router.push");
+             
               router.push('/dashboard');
             } catch (error: unknown) {
               console.error("Error with router.push:", error);
               
               // If immediate push fails, use a plain function in setTimeout (not a string)
               const redirectToPath = () => {
-                console.log("Executing delayed redirect");
+              
                 window.location.href = '/dashboard';
               };
               

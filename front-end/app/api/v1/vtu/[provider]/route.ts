@@ -31,7 +31,7 @@ export async function POST(
     // Map the provider name to its service ID
     const serviceID = networkProviderServiceIDs[providerName];
     
-    console.log(`Provider: ${providerParam} -> ${providerName} -> Service ID: ${serviceID}`);
+   
     
     // Get the authorization token
     const token = req.cookies.get('accessToken')?.value;
@@ -82,7 +82,7 @@ export async function POST(
     const random = Math.floor(10000 + Math.random() * 90000); // 5-digit random number
     const request_id = `${year}${month}${day}${hours}${minutes}${seconds}${random}`;
     
-    console.log(`Processing ${providerName} VTU purchase: Phone=${cleanPhone}, Amount=${amountValue}, RequestID=${request_id}, Raw inputs: Phone=${phone}, Amount=${amount}`);
+   
     
     // Send the VTU request to the payment provider
     let result;
@@ -94,7 +94,7 @@ export async function POST(
         request_id
       });
       
-      console.log(`${providerName} VTPass API response received:`, result);
+     
     } catch (vtuError: any) {
       console.error(`${providerName} VTU API call failed:`, vtuError);
       return NextResponse.json(
@@ -181,12 +181,12 @@ export async function GET(
       );
     }
     
-    console.log(`Requerying ${providerName} transaction status for request_id: ${request_id}`);
+   
     
     // Query the transaction status
     const result = await requeryTransaction({ request_id });
     
-    console.log(`${providerName} VTPass requery response:`, result);
+   
     
     if (result && result.code === '000') {
       return NextResponse.json({ 

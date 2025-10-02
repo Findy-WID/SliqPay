@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const random = Math.floor(10000 + Math.random() * 90000); // 5-digit random number
     const request_id = `${year}${month}${day}${hours}${minutes}${seconds}${random}`;
     
-    console.log(`Processing MTN VTU purchase: Phone=${cleanPhone}, Amount=${amountValue}, RequestID=${request_id}, Raw inputs: Phone=${phone}, Amount=${amount}`);
+   
     
     // Send the VTU request to the payment provider
     let result;
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         request_id
       });
       
-      console.log('VTPass API response received:', result);
+     
     } catch (vtuError: any) {
       console.error('VTU API call failed:', vtuError);
       return NextResponse.json(
@@ -127,12 +127,12 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`Requerying transaction status for request_id: ${request_id}`);
+   
     
     // Query the transaction status
     const result = await requeryTransaction({ request_id });
     
-    console.log('VTPass requery response:', result);
+   
     
     if (result && result.code === '000') {
       return NextResponse.json({ 

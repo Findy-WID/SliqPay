@@ -57,7 +57,7 @@ export default function ProductCard({
         throw new Error("Please enter a valid 10-11 digit phone number");
       }
       
-      console.log(`Submitting purchase: Provider=${provider}, Phone=${phoneNumber}, Amount=${product.amount}`);
+     
       
       const res = await fetch(`/api/v1/vtu/${provider.toLowerCase()}/`, {
         method: "POST",
@@ -67,7 +67,7 @@ export default function ProductCard({
       });
       
       const data = await res.json();
-      console.log("API response:", data);
+     
       
       if (res.status === 401) {
         setError("Authentication error. Please log out and log in again.");

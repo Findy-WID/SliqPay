@@ -9,17 +9,17 @@ const loginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("Processing login request");
+   
     const body = await req.json();
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
-      console.log("Login validation failed:", parsed.error.flatten());
+     
       return NextResponse.json({ error: { message: 'Validation failed', details: parsed.error.flatten() } }, { status: 400 });
     }
     const { email, password } = parsed.data;
-    console.log("Attempting login for:", email);
+   
     const result = await login(email, password);
-    console.log("Login successful for:", email);
+   
     
     // Create a response with the token set as a cookie
     const response = NextResponse.json(result);

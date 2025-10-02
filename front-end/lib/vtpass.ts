@@ -91,16 +91,7 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
     Accept: "application/json",
   } as Record<string, string>;
 
-  // Debug: log VTpass request details (without full secrets)
-  console.log("VTPass Request Details:");
-  console.log("- Service ID:", serviceID);
-  console.log("- Phone:", cleanPhone);
-  console.log("- Amount:", amountString);
-  console.log("- Request ID:", request_id);
-  console.log("- API Key:", apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "NOT_SET");
-  console.log("- Secret Key:", secretKey ? `${secretKey.substring(0, 4)}...${secretKey.substring(secretKey.length - 4)}` : "NOT_SET");
-  console.log("- Base URL:", baseUrl);
-  console.log("- Full URL:", `${baseUrl}/pay`);
+ 
   
   // Validate required credentials
   if (!apiKey || !secretKey) {
@@ -111,7 +102,7 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    console.log("Making VTPass API request with payload:", JSON.stringify(payload));
+   
     
     const response = await fetch(`${baseUrl}/pay`, {
       method: "POST",
@@ -122,13 +113,12 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
 
     clearTimeout(timeoutId);
     
-    console.log("VTPass HTTP status:", response.status, response.statusText);
-    
+   
     // Try to get the response data
     let data;
     try {
       data = await response.json();
-      console.log("VTPass raw response:", JSON.stringify(data));
+     
     } catch (jsonError) {
       console.error("Failed to parse VTPass response as JSON:", await response.text());
       throw new Error("Invalid response from VTPass API");
@@ -149,7 +139,7 @@ export async function sendVtu({ serviceID, phone, amount, request_id }: { servic
       );
     }
 
-    console.log("VTPass API successful response:", data);
+   
     return data;
   } catch (error: any) {
     clearTimeout(timeoutId);
@@ -180,7 +170,7 @@ export async function requeryTransaction({ request_id }: { request_id: string })
     throw new Error("VTpass API keys or base URL are not set in environment variables");
   }
   
-  console.log(`Requerying transaction with request_id: ${request_id}`);
+ 
   
   const headers = {
     "api-key": apiKey,
@@ -190,18 +180,13 @@ export async function requeryTransaction({ request_id }: { request_id: string })
   } as Record<string, string>;
 
   // Debug log (without showing full secrets)
-  console.log("VTPass Requery Details:");
-  console.log("- Request ID:", request_id);
-  console.log("- API Key:", apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : "NOT_SET");
-  console.log("- Secret Key:", secretKey ? `${secretKey.substring(0, 4)}...${secretKey.substring(secretKey.length - 4)}` : "NOT_SET");
-  console.log("- Base URL:", baseUrl);
-  console.log("- Full URL:", `${baseUrl}/requery`);
+
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    console.log("Making VTPass requery request with payload:", JSON.stringify({ request_id }));
+  
     
     const response = await fetch(`${baseUrl}/requery`, {
       method: "POST",
@@ -212,13 +197,13 @@ export async function requeryTransaction({ request_id }: { request_id: string })
 
     clearTimeout(timeoutId);
     
-    console.log("VTPass requery HTTP status:", response.status, response.statusText);
+   
     
     // Try to get the response data
     let data;
     try {
       data = await response.json();
-      console.log("VTPass requery raw response:", JSON.stringify(data));
+    
     } catch (jsonError) {
       console.error("Failed to parse VTPass requery response as JSON:", await response.text());
       throw new Error("Invalid response from VTPass API");
@@ -233,7 +218,7 @@ export async function requeryTransaction({ request_id }: { request_id: string })
       );
     }
 
-    console.log("VTPass API requery successful response:", data);
+   
     return data;
   } catch (error: any) {
     clearTimeout(timeoutId);
