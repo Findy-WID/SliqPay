@@ -13,21 +13,21 @@ const signupSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("Processing signup request");
+   
     const body = await req.json();
-    console.log("Request body received:", JSON.stringify(body, null, 2));
+   
     
     const parsed = signupSchema.safeParse(body);
     if (!parsed.success) {
-      console.log("Validation failed:", parsed.error.flatten());
+     
       return NextResponse.json({ error: { message: 'Validation failed', details: parsed.error.flatten() } }, { status: 400 });
     }
     
     const { fname, lname, email, password, phone, refCode } = parsed.data;
-    console.log("Valid signup data for:", email);
+  
     
     const result = await signup(fname, lname, email, password, phone, refCode);
-    console.log("Signup successful for:", email);
+   
     
     // Create a response with the token set as a cookie
     const response = NextResponse.json(result, { status: 201 });

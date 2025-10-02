@@ -21,14 +21,14 @@ export default function Navbar() {
         const isProduction = process.env.NODE_ENV === 'production';
         const apiPath = isProduction ? '/api/v1/auth/logout' : 'http://localhost:4000/api/v1/auth/logout';
         
-        console.log(`Logging out using: ${apiPath}`);
+       
         
         await fetch(apiPath, { 
           method: 'POST', 
           credentials: 'include' 
         });
         
-        console.log('Logout successful, redirecting to login page');
+       
       } catch (e) {
         console.error('Logout error:', e);
         // continue with logout even if API call fails
