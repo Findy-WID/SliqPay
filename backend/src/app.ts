@@ -8,6 +8,7 @@ import { notFound } from './common/middleware/notFound.js';
 import { errorHandler } from './common/middleware/errorHandler.js';
 import { sessionMiddleware } from './common/session/sessionStore.js';
 import { rateLimit } from './common/middleware/rateLimit.js';
+import { PrismaClient } from '@prisma/client';
 
 export const app = express();
 app.use(helmet());
@@ -21,3 +22,13 @@ app.use(morgan('dev'));
 app.use('/api/v1', routes);
 app.use(notFound);
 app.use(errorHandler);
+
+// Database connection log
+const prisma = new PrismaClient();
+prisma.$connect()
+  .then(() => {
+    console.log(' Connected to the database');
+  })
+  .catch((err) => {
+    console.error(' Failed to connect to the database:', err);
+  });
