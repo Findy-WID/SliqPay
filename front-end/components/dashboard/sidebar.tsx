@@ -4,8 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Products, Category } from "@/lib/products";
+import { cn } from "@/lib/utils";
 
-export default function Sidebar() {
+type SidebarProps = {
+    className?: string;
+    variant?: "desktop" | "mobile";
+};
+
+export default function Sidebar({ className, variant = "desktop" }: SidebarProps) {
     const pathname = usePathname();
 
     const [open, setIsOpen] = useState<Category | null>(null);
@@ -20,8 +26,13 @@ export default function Sidebar() {
     const isActiveCategory = (cat: string) =>
         pathname.startsWith(`/dashboard/${cat}`);
 
+    const wrapperClasses =
+        variant === "desktop"
+            ? "w-64 bg-white border-r border-gray-200 min-h-screen p-4"
+            : "w-full h-full bg-white p-4 overflow-y-auto";
+
     return (
-        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-4">
+        <aside className={cn(wrapperClasses, className)}>
             {/* Logo */}
             <div className="mb-6">
                 <Link href="/">
