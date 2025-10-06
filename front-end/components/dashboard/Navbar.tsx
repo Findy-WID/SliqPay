@@ -6,6 +6,7 @@ import { IoSettingsSharp } from "react-icons/io5";
 import { IoNotifications } from "react-icons/io5";
 import { useState } from 'react';
 import Sidebar from "@/components/dashboard/sidebar";
+import { X } from "lucide-react";
 import { HiOutlineMenu } from "react-icons/hi";
 
 export default function Navbar() {
@@ -108,7 +109,16 @@ export default function Navbar() {
         role="dialog"
         aria-modal="true"
       >
-        <Sidebar variant="mobile" className="h-full" />
+        <div className="relative h-full">
+          <button
+            aria-label="Close menu"
+            className="absolute right-3 top-3 p-2 rounded-md hover:bg-gray-100"
+            onClick={() => setMobileOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <Sidebar variant="mobile" className="h-full pt-10" />
+        </div>
       </div>
     </header>
   );
