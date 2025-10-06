@@ -5,6 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { IoSettingsSharp } from "react-icons/io5";
 import { IoNotifications } from "react-icons/io5";
 import { useState } from 'react';
+import Sidebar from "@/components/dashboard/sidebar";
+import { X } from "lucide-react";
+import { HiOutlineMenu } from "react-icons/hi";
 
 export default function Navbar() {
     const pathName = usePathname();
@@ -41,16 +44,28 @@ export default function Navbar() {
       }
     }
 
-  return (
-    <header className="sticky top-0 z-10 bg-white border-b">
-      <div className="h-14 flex items-center justify-between px-4">
-        {/* Left: logo (small) */}
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <img src="/Sliqpayvisual12.png" alt="SliqPay" className="h-5" />
-        </Link>
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-        {/* Center: nav */}
-        <nav className="flex items-center gap-1">
+  return (
+    <header className="sticky top-0 z-20 bg-white border-b">
+      <div className="h-14 flex items-center justify-between px-4">
+        {/* Left: mobile hamburger + logo */}
+        <div className="flex items-center gap-2">
+          {/* Hamburger visible on small screens */}
+          <button
+            aria-label="Open menu"
+            className="md:hidden p-2 rounded-md hover:bg-gray-100"
+            onClick={() => setMobileOpen(true)}
+          >
+            <HiOutlineMenu className="h-6 w-6" />
+          </button>
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <img src="/Sliqpayvisual12.png" alt="SliqPay" className="h-5" />
+          </Link>
+        </div>
+
+        {/* Center: nav, hidden on small screens */}
+        <nav className="hidden md:flex items-center gap-1">
           <Link
             href="/dashboard"
             className={`px-3 py-1.5 rounded-md text-sm ${
@@ -76,6 +91,34 @@ export default function Navbar() {
         </div>
 
         
+      </div>
+
+      {/* Mobile off-canvas sidebar */}
+      {/* Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+      {/* Panel */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-4/5 max-w-[280px] bg-white shadow-lg md:hidden transform transition-transform duration-300 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="relative h-full">
+          <button
+            aria-label="Close menu"
+            className="absolute right-3 top-3 p-2 rounded-md hover:bg-gray-100"
+            onClick={() => setMobileOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <Sidebar variant="mobile" className="h-full pt-10" />
+        </div>
       </div>
     </header>
   );
