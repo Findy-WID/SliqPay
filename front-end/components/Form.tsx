@@ -71,6 +71,8 @@ export default function Form({ formtype }: FormProp) {
     };
 
     const { title, subtitle } = formHeading();
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
 
     const [formInfos, setFormInfos] = useState<FormInfos>({
         fname: "",
@@ -184,7 +186,14 @@ export default function Form({ formtype }: FormProp) {
     };
 
     return (
-        <div className="min-h-screen bg-[#f4fdf8] flex flex-col justify-center items-center p-6 space-y-12">
+        <div className="min-h-screen bg-[#f7fbff] relative flex flex-col justify-center items-center p-6">
+        {/* subtle decorative background for auth pages */}
+        {formtype === 'login' && (
+            <>
+              <div className="pointer-events-none absolute -top-10 right-[-20%] h-64 w-64 rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#d9f3ff] to-transparent blur-2xl opacity-70"/>
+              <div className="pointer-events-none absolute top-24 left-[-20%] h-56 w-56 rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#e6fff3] to-transparent blur-2xl opacity-70"/>
+            </>
+        )}
         {/* Show render errors if any */}
         {renderError && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 max-w-md mx-auto">
@@ -196,17 +205,17 @@ export default function Form({ formtype }: FormProp) {
         <img
             src="/Sliqpayvisual12.png"
             alt="SliqPay"
-            className="h-12 mx-auto mb-4"
+            className={`mb-4 ${formtype === 'login' ? 'h-6 self-start w-auto absolute left-6 top-6' : 'h-12 mx-auto'}`}
             onError={(e) => {
                 e.currentTarget.onerror = null; 
                 e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='32' viewBox='0 0 100 32'%3E%3Crect width='100' height='32' fill='%23eee'/%3E%3Ctext x='50' y='20' font-family='Arial' font-size='12' text-anchor='middle' fill='%23333'%3ESliqPay%3C/text%3E%3C/svg%3E";
                 console.error("Failed to load image");
             }}
-        />   
-        <form onSubmit={onSubmit} className="px-8 pt-6 pb-12 mb-4 w-full max-w-md bg-white shadow-md rounded-lg">
+        />
+        <form onSubmit={onSubmit} className="px-6 pt-6 pb-8 w-full max-w-md bg-white shadow-sm rounded-2xl border border-gray-100">
             <div className="text-center mb-6">
-                <h1 className="text-2xl font-bold mb-2">{title}</h1>
-                <p className="text-sm text-gray-600">{subtitle}</p>
+                <h1 className="text-2xl font-extrabold mb-1 tracking-tight">{formtype === 'login' ? 'Welcome Back' : title}</h1>
+                <p className="text-sm text-gray-500">{formtype === 'login' ? 'Sign In to continue' : subtitle}</p>
             </div>
             {errorMsg && <p className="text-sm text-red-600 mb-4" role="alert">{errorMsg}</p>}
             {successMsg && <p className="text-sm text-green-600 mb-4" role="status">{successMsg}</p>}
@@ -248,8 +257,8 @@ export default function Form({ formtype }: FormProp) {
                 <label className="block text-gray-700 text-sm mb-2">Email</label>
                 <input
                 type="email"
-                className="w-full border rounded px-3 py-3"
-                placeholder="john@example.com"
+                className={`w-full rounded-xl px-4 py-3 outline-none transition border ${formtype==='login' ? 'bg-gray-100 border-gray-200 focus:border-gray-300' : 'border-gray-300 focus:border-gray-400'}`}
+                placeholder={formtype==='login' ? 'Olabunmi@sampleemail.com' : 'john@example.com'}
                 value={formInfos.email}
                 onChange={(e) =>
                     setFormInfos({ ...formInfos, email: e.target.value })
@@ -275,21 +284,39 @@ export default function Form({ formtype }: FormProp) {
             </div>
             )}
 
-            {showField("password") && (
-            <div className="mb-4">
-                <label className="block text-gray-700 text-sm mb-2">Password</label>
-                <input
-                type="password"
-                className="w-full border rounded px-3 py-3"
-                placeholder="••••••••"
-                value={formInfos.password}
-                onChange={(e) =>
-                    setFormInfos({ ...formInfos, password: e.target.value })
-                }
-            />
-            {fieldErrors.password && <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>}
-            </div>
-            )}
+                        {showField("password") && (
+                        <div className="mb-4">
+                                <label className="block text-gray-700 text-sm mb-2">Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        className={`w-full rounded-xl px-4 py-3 pr-10 outline-none transition border ${formtype==='login' ? 'bg-gray-100 border-gray-200 focus:border-gray-300' : 'border-gray-300 focus:border-gray-400'}`}
+                                        placeholder={formtype==='login' ? '****************' : '••••••••'}
+                                        value={formInfos.password}
+                                        onChange={(e) =>
+                                            setFormInfos({ ...formInfos, password: e.target.value })
+                                        }
+                                    />
+                                    {formtype === 'login' && (
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                            onClick={() => setShowPassword((v) => !v)}
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showPassword ? (
+                                                /* eye-off */
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l18 18"/><path d="M10.58 10.58a2 2 0 102.83 2.83"/><path d="M16.24 16.24A8.45 8.45 0 0112 18c-5 0-9-6-9-6a16.9 16.9 0 014.22-4.22"/><path d="M14.12 9.88A2 2 0 0012 8a2 2 0 00-2 2"/><path d="M19.78 8.22A16.9 16.9 0 0121 12s-4 6-9 6a8.49 8.49 0 01-3.5-.74"/></svg>
+                                            ) : (
+                                                /* eye */
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            )}
+                                        </button>
+                                    )}
+                                </div>
+                                {fieldErrors.password && <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>}
+                        </div>
+                        )}
 
             {showField("cPassword") && (
             <div className="mb-4">
@@ -322,13 +349,23 @@ export default function Form({ formtype }: FormProp) {
             </div>
             )}
 
-            <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors disabled:opacity-60"
-            >
-            {loading ? 'Please wait...' : (formtype === "signup" ? "Create Account" : formtype === "login" ? "Sign In" : "Reset Password")}
-            </button>
+                        {formtype === 'login' && (
+                            <div className="mb-4 mt-2 flex items-center justify-between text-sm">
+                                <label className="inline-flex items-center gap-2 select-none">
+                                    <input type="checkbox" className="h-4 w-4 rounded border-gray-300" checked={rememberMe} onChange={(e)=>setRememberMe(e.target.checked)} />
+                                    <span className="text-gray-700">Remember me</span>
+                                </label>
+                                <a href="/auth/forgotpassword" className="text-blue-500 hover:underline">Forgot Password</a>
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-green-600 text-white py-3 px-4 rounded-xl font-medium shadow-sm hover:bg-green-700 transition-colors disabled:opacity-60"
+                        >
+                            {loading ? 'Please wait...' : (formtype === 'login' ? 'Continue' : formtype === 'signup' ? 'Create Account' : 'Reset Password')}
+                        </button>
 
             <div className="text-center mt-4">
             {formtype === "signup" ? (
@@ -339,19 +376,10 @@ export default function Form({ formtype }: FormProp) {
                 </a>
                 </p>
             ) : formtype === "login" ? (
-                <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                    Don't have an account?{" "}
-                    <a href="/auth/signup" className="text-green-600 hover:underline">
-                        Sign up
-                    </a>
+                  Don't have an account?{" "}
+                  <a href="/auth/signup" className="text-green-600 hover:underline">Signup</a>
                 </p>
-                <p className="text-sm text-gray-600">
-                    <a href="/auth/forgotpassword" className="text-green-600 hover:underline">
-                        Forgot your password?
-                    </a>
-                </p>
-                </div>
             ) : (
                 <p className="text-sm text-gray-600">
                 Remember your password?{" "}
