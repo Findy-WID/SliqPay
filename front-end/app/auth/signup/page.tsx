@@ -16,9 +16,18 @@ export default function Signup() {
             {/* Logo and language switch (top-right) */}
             <div className="w-full max-w-md flex items-center justify-between mt-4">
                 <img src="/Sliqpayvisual12.png" alt="SliqPay" className="h-6" />
-                <div className="hidden sm:flex items-center gap-2 text-sm border rounded-md px-2 py-1 bg-white">
-                    <span>{language}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+                <div className="hidden sm:flex items-center gap-2">
+                    <label htmlFor="lang-top" className="sr-only">Language</label>
+                    <select
+                        id="lang-top"
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="text-sm border rounded-md px-2 py-1 bg-white"
+                    >
+                        <option value="English (US)">English (US)</option>
+                        <option value="French">French</option>
+                        <option value="Swahiki">Swahiki</option>
+                    </select>
                 </div>
             </div>
 
@@ -30,11 +39,17 @@ export default function Signup() {
                     </div>
                     <div className="bg-white border border-blue-100 rounded-2xl shadow-sm p-5">
                         <p className="text-center text-green-700 font-semibold mb-3">Select app Language</p>
-                        <label className="block text-xs text-gray-500 mb-1">App Language</label>
-                        <div className="flex items-center justify-between border rounded-xl px-3 py-3 bg-white">
-                            <span className="text-gray-700 text-sm">{language}</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-                        </div>
+                        <label htmlFor="lang-card" className="block text-xs text-gray-500 mb-1">App Language</label>
+                        <select
+                            id="lang-card"
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                            className="w-full border rounded-xl px-3 py-3 bg-white text-gray-700 text-sm"
+                        >
+                            <option value="English (US)">English (US)</option>
+                            <option value="French">French</option>
+                            <option value="Swahiki">Swahiki</option>
+                        </select>
                         <button
                             className="mt-6 w-full bg-green-600 text-white py-3 rounded-xl font-medium hover:bg-green-700"
                             onClick={() => setShowForm(true)}
