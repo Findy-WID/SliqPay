@@ -97,6 +97,9 @@ export default function Form({ formtype }: FormProp) {
         setFieldErrors({});
         try {
             setLoading(true);
+                        // Temporary: No authentication implemented for now
+                        // Set this flag to false when enabling real auth again
+                        const NO_AUTH = true;
             let payload: any;
             if (formtype === "signup") {
               const parsed = signupSchema.safeParse({ ...formInfos, phone: sanitizePhone(formInfos.phone) });
@@ -110,6 +113,12 @@ export default function Form({ formtype }: FormProp) {
               }
               const v = parsed.data;
               payload = { fname: v.fname, lname: v.lname, email: v.email, password: v.password, phone: v.phone || undefined, refCode: formInfos.refCode?.trim() || undefined };
+                            if (NO_AUTH) {
+                                setSuccessMsg('Account created! Redirecting to dashboard...');
+                                // Simulate quick success and redirect
+                                router.push('/dashboard');
+                                return;
+                            }
             } else if (formtype === "login") {
               const parsed = loginSchema.safeParse({ email: formInfos.email, password: formInfos.password });
               if (!parsed.success) {
@@ -122,6 +131,11 @@ export default function Form({ formtype }: FormProp) {
               }
               const v = parsed.data;
               payload = { email: v.email, password: v.password };
+                            if (NO_AUTH) {
+                                setSuccessMsg('Login successful! Redirecting to dashboard...');
+                                router.push('/dashboard');
+                                return;
+                            }
             } else {
               // forgot
               const emailOnly = z.object({ email: z.string().trim().email("Enter a valid email address") });
@@ -138,7 +152,6 @@ export default function Form({ formtype }: FormProp) {
             }
 
             const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/forgotpassword';
-        
             const response = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
           
             
@@ -158,21 +171,15 @@ export default function Form({ formtype }: FormProp) {
             
             // Use a safer approach that doesn't trigger CSP issues
             // Immediately try router push first
-            try {
-             
-              router.push('/dashboard');
-            } catch (error: unknown) {
-              console.error("Error with router.push:", error);
-              
-              // If immediate push fails, use a plain function in setTimeout (not a string)
-              const redirectToPath = () => {
-              
-                window.location.href = '/dashboard';
-              };
-              
-              // Use the function reference, not a string
-              setTimeout(redirectToPath, 1000);
-            }
+                        try {
+                            router.push('/dashboard');
+                        } catch (error: unknown) {
+                            console.error("Error with router.push:", error);
+                            const redirectToPath = () => {
+                                window.location.href = '/dashboard';
+                            };
+                            setTimeout(redirectToPath, 1000);
+                        }
         } catch (err: any) {
             const message = err.message || 'Something went wrong';
             toast({

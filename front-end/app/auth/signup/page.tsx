@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Form from "@/components/Form";
 
 export default function Signup() {
     const [showForm, setShowForm] = useState(false);
     const [language, setLanguage] = useState("English (US)");
+    const router = useRouter();
 
     return (
         <div className="min-h-screen bg-[#f7fbff] relative flex flex-col items-center p-6">
@@ -26,7 +28,7 @@ export default function Signup() {
                     >
                         <option value="English (US)">English (US)</option>
                         <option value="French">French</option>
-                        <option value="Swahiki">Swahiki</option>
+                        <option value="Swahili">Swahili</option>
                     </select>
                 </div>
             </div>
@@ -48,21 +50,17 @@ export default function Signup() {
                         >
                             <option value="English (US)">English (US)</option>
                             <option value="French">French</option>
-                            <option value="Swahiki">Swahiki</option>
+                            <option value="Swahili">Swahili</option>
                         </select>
                         <button
                             className="mt-6 w-full bg-green-600 text-white py-3 rounded-xl font-medium hover:bg-green-700"
-                            onClick={() => setShowForm(true)}
+                            onClick={() => router.push('/auth/signup/get-started')}
                         >
                             Continue with {language}
                         </button>
                     </div>
                 </div>
-            ) : (
-                <div className="w-full max-w-md mt-6">
-                    <Form formtype="signup" />
-                </div>
-            )}
+            ) : null}
         </div>
     );
 }

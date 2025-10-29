@@ -1,10 +1,13 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { cspMiddleware } from './middleware/csp';
 
-// Routes that require auth
+// Toggle auth guard globally (disabled for now per requirements)
+const DISABLE_AUTH_GUARD = true;
+
+// Routes that would require auth (kept for future use)
 const protectedPrefixes = ['/dashboard'];
-// API routes that require auth
-const protectedApiRoutes = ['/api/v1/accounts', '/api/v1/transactions', '/api/v1/vtu'];
+// API routes that would require auth (kept for future use)
+const protectedApiRoutes = ['/api/v1/accounts', '/api/v1/transactions'];
 // Auth pages that redirect to dashboard if already logged in
 const authPages = ['/auth/login', '/auth/signup'];
 // Auth pages that are always accessible
@@ -18,18 +21,23 @@ export function middleware(req: NextRequest) {
   const isAuthed = !!token;
 
   // If accessing protected route while not authenticated -> redirect to login
-  if (protectedPrefixes.some(p => pathname === p || pathname.startsWith(p + '/'))) {
-    if (!isAuthed) {
-      const url = req.nextUrl.clone();
-      url.pathname = '/auth/login';
-      return NextResponse.redirect(url);
+  // Disabled for now: dashboard and other pages are publicly accessible
+  if (!DISABLE_AUTH_GUARD) {
+    if (protectedPrefixes.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+      if (!isAuthed) {
+        const url = req.nextUrl.clone();
+        url.pathname = '/auth/login';
+        return NextResponse.redirect(url);
+      }
     }
   }
 
   // If accessing protected API route while not authenticated -> return 401
-  if (protectedApiRoutes.some(p => pathname.startsWith(p)) && !publicApiRoutes.includes(pathname)) {
-    if (!isAuthed) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!DISABLE_AUTH_GUARD) {
+    if (protectedApiRoutes.some(p => pathname.startsWith(p)) && !publicApiRoutes.includes(pathname)) {
+      if (!isAuthed) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
   }
 

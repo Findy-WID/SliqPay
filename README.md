@@ -1,6 +1,6 @@
 # SliqPay 💸
 
-**SliqPay** is a modern trendy fintech MVP for seamless bill payments — starting with airtime, data, electricity, and cable TV.
+**SliqPay** is a modern trendy fintech MVP for wallet, exchange rates, and basic payments UX.
 
 ---
 
@@ -9,7 +9,7 @@
 - **Next.js 14 (App Router)**
 - **TypeScript**
 - **Tailwind CSS**
-- **VTPass API** (for bill payments)
+- (Bill payment provider to be integrated later)
 - **Planned Web3 support** (e.g. stablecoin payments)
 
 ---
@@ -17,8 +17,7 @@
 ## 🚀 Roadmap (MVP1)
 
 - [ ] Branding (Logo, Colors)
-- [ ] Airtime Purchase via VTPass
-- [ ] TV, Electricity, and Data services
+- [ ] Airtime/Data/TV/Electricity integrations
 - [ ] Admin Dashboard
 
 ---
@@ -33,10 +32,6 @@ cd sliqpay
 cd front-end
 npm install
 
-# Create .env file with the following content:
-# VTPASS_API_KEY=your_api_key
-# VTPASS_PUBLIC_KEY=your_public_key
-# VTPASS_SECRET_KEY=your_secret_key
-# VTPASS_BASE_URL=https://sandbox.vtpass.com/api  # Use https://vtpass.com/api for production
+# Create .env file if needed for future providers
 npm install
 npm run dev
