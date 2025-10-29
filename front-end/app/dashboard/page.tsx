@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { SendIcon, ReceiveIcon, ConvertIcon, AirtimeIcon, BillsIcon } from "@/components/icons";
 import { Menu, Bell, Eye, EyeOff, RefreshCw, Home, Receipt, Repeat, Wallet, Settings, X } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 // Skeleton component for loading state
 function DashboardSkeleton() {
@@ -82,6 +83,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardHome() {
+    const router = useRouter();
     const [currency, setCurrency] = useState("NGN");
     const [showBalance, setShowBalance] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
@@ -108,17 +110,19 @@ export default function DashboardHome() {
                 return "🇺🇸";
             case "EUR":
                 return "🇪🇺";
+            case "BTC":
+                return "₿";
             default:
                 return "🏳️";
         }
     };
 
     const quickActions = [
-        { label: "Send", icon: <SendIcon size={20} /> },
-        { label: "Receive", icon: <ReceiveIcon size={20} /> },
-        { label: "Convert", icon: <ConvertIcon size={20} /> },
-        { label: "Buy Airtime", icon: <AirtimeIcon size={20} /> },
-        { label: "Pay Bills", icon: <BillsIcon size={20} /> },
+        { label: "Send", icon: <SendIcon size={20} />, onClick: () => router.push("/dashboard/send") },
+        { label: "Receive", icon: <ReceiveIcon size={20} />, onClick: () => {} },
+        { label: "Convert", icon: <ConvertIcon size={20} />, onClick: () => {} },
+        { label: "Buy Airtime", icon: <AirtimeIcon size={20} />, onClick: () => {} },
+        { label: "Pay Bills", icon: <BillsIcon size={20} />, onClick: () => {} },
     ];
 
     const transactions = [
@@ -244,6 +248,7 @@ export default function DashboardHome() {
                                 <option>NGN</option>
                                 <option>USD</option>
                                 <option>EUR</option>
+                                <option>BTC</option>
                             </select>
                         </div>
                     </div>
@@ -273,7 +278,11 @@ export default function DashboardHome() {
 
                         <div className="grid grid-cols-5 gap-2">
                             {quickActions.map((a) => (
-                                <button key={a.label} className="flex flex-col items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-sm py-4 hover:bg-white hover:shadow-md transition-all">
+                                <button 
+                                    key={a.label} 
+                                    onClick={a.onClick}
+                                    className="flex flex-col items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-sm py-4 hover:bg-white hover:shadow-md transition-all"
+                                >
                                     <span className="text-gray-700">{a.icon}</span>
                                     <span className="text-[10px] text-gray-700 leading-tight text-center font-medium">{a.label}</span>
                                 </button>
@@ -300,6 +309,7 @@ export default function DashboardHome() {
                                 <option>EUR</option>
                                 <option>USD</option>
                                 <option>GBP</option>
+                                <option>BTC</option>
                             </select>
                         </div>
                         <div className="text-gray-900">
