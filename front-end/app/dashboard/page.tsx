@@ -88,6 +88,7 @@ export default function DashboardHome() {
     const [showBalance, setShowBalance] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [accountsOpen, setAccountsOpen] = useState(false);
 
     const balance = useMemo(() => 25000, []);
     const wallet = "0x4A8C...E52B";
@@ -106,12 +107,18 @@ export default function DashboardHome() {
         switch (code) {
             case "NGN":
                 return "🇳🇬";
+            case "GHS":
+                return "🇬🇭";
             case "USD":
                 return "🇺🇸";
             case "EUR":
                 return "🇪🇺";
             case "BTC":
                 return "₿";
+            case "SOL":
+                return "◎";
+            case "ETH":
+                return "Ξ";
             default:
                 return "🏳️";
         }
@@ -236,21 +243,19 @@ export default function DashboardHome() {
                 </button>
             </header>
                     <div className="flex items-center justify-center mb-6">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs shadow-sm border border-gray-100">
+                        <button
+                            type="button"
+                            onClick={() => setAccountsOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs shadow-sm border border-gray-100 hover:bg-gray-50"
+                            aria-haspopup="dialog"
+                            aria-expanded={accountsOpen}
+                            aria-controls="accounts-modal"
+                        >
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                             <span title={currency} aria-label={`${currency} flag`} className="text-lg">{currencyFlag(currency)}</span>
-                            <select
-                                aria-label="Select currency"
-                                value={currency}
-                                onChange={(e) => setCurrency(e.target.value)}
-                                className="bg-transparent outline-none text-sm font-semibold text-gray-800 cursor-pointer"
-                            >
-                                <option>NGN</option>
-                                <option>USD</option>
-                                <option>EUR</option>
-                                <option>BTC</option>
-                            </select>
-                        </div>
+                            <span className="text-sm font-semibold text-gray-800">{currency}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" className="text-gray-600" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
                     </div>
 
                     <div>
@@ -374,6 +379,105 @@ export default function DashboardHome() {
                     )}
                 </section>
             </div>
+
+            {/* Accounts modal */}
+            <div id="accounts-modal" className={`fixed inset-0 z-50 ${accountsOpen ? '' : 'pointer-events-none'}`} aria-hidden={!accountsOpen}>
+                {/* Backdrop */}
+                <div
+                    className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${accountsOpen ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={() => setAccountsOpen(false)}
+                />
+
+                {/* Panel */}
+                <div
+                    className={[
+                        'absolute left-0 right-0 bottom-0 mx-auto w-full max-w-md bg-white shadow-2xl',
+                        'rounded-t-2xl md:rounded-2xl',
+                        'transition-all duration-300',
+                        accountsOpen ? 'translate-y-0 md:opacity-100 md:scale-100' : 'translate-y-full md:opacity-0 md:scale-95',
+                        'md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2',
+                    ].join(' ')}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    {/* Grab handle */}
+                    <div className="md:hidden flex justify-center pt-3">
+                        <div className="h-1.5 w-12 rounded-full bg-gray-300" />
+                    </div>
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-5 pt-4 pb-3">
+                        <h3 className="text-base font-bold text-gray-900">Accounts</h3>
+                        <div className="flex items-center gap-2">
+                           
+                            <button onClick={() => setAccountsOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                                <X size={18} className="text-gray-700" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="px-5 pb-6 max-h-[70vh] overflow-y-auto">
+                        {/* FIAT */}
+                        <p className="text-[10px] font-semibold text-gray-500 tracking-wider mb-3">FIAT</p>
+                        <div className="space-y-2">
+                            {[
+                                { code: 'NGN', name: 'Nigerian Naira' },
+                                { code: 'GHS', name: 'Ghanian  Cedi' },
+                                { code: 'USD', name: 'US Dollar' },
+                            ].map((f) => (
+                                <button
+                                    key={f.code}
+                                    onClick={() => { setCurrency(f.code); setAccountsOpen(false); }}
+                                    className="w-full flex items-center justify-between rounded-2xl px-3 py-3 hover:bg-gray-50"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-xl">
+                                            {currencyFlag(f.code)}
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-gray-900">{f.name}</p>
+                                            <p className="text-[11px] text-gray-500">₦25,000.00</p>
+                                        </div>
+                                    </div>
+                                    <div className="h-6 w-6">
+                                        {currency === f.code && (
+                                            <div className="h-6 w-6 rounded-full bg-cyan-100 text-cyan-600 grid place-items-center">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* CRYPTO */}
+                        <div className="mt-5 flex items-center justify-between">
+                            <p className="text-[10px] font-semibold text-gray-500 tracking-wider">CRYPTO</p>
+                            <p className="text-[10px] font-semibold text-emerald-600">CONNECTED WALLET: {wallet}</p>
+                        </div>
+                        <div className="mt-2 space-y-2">
+                            {[
+                                { code: 'SOL', name: 'Solana' },
+                                { code: 'BTC', name: 'Bitcoin' },
+                                { code: 'ETH', name: 'Ethereum' },
+                            ].map((c) => (
+                                <div key={c.code} className="w-full flex items-center justify-between rounded-2xl px-3 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-xl">
+                                            {currencyFlag(c.code)}
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-gray-900">{c.name}</p>
+                                            <p className="text-[11px] text-gray-500">₦25,000.00</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
+
