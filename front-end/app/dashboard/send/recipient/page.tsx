@@ -1,23 +1,40 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Lock, ArrowUpDown } from "lucide-react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
-export default function SendMoneyRecipientPage() {
+function RecipientInner() {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const [accountNumber, setAccountNumber] = useState("");
     const [accountName, setAccountName] = useState("");
     const [bankName, setBankName] = useState("");
     const [showConfirm, setShowConfirm] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
-    // Values from previous page (query params)
-    const sendAmountParam = searchParams.get("sendAmount") || "0";
-    const sendCurrencyParam = searchParams.get("sendCurrency") || "NGN";
-    const receiveAmountParam = searchParams.get("receiveAmount") || "0.00";
-    const receiveCurrencyParam = searchParams.get("receiveCurrency") || "GHS";
+    // Values from previous page (query params) - parsed on client to avoid Suspense requirement
+    const [sendAmountParam, setSendAmountParam] = useState<string>("0");
+    const [sendCurrencyParam, setSendCurrencyParam] = useState<string>("NGN");
+    const [receiveAmountParam, setReceiveAmountParam] = useState<string>("0.00");
+    const [receiveCurrencyParam, setReceiveCurrencyParam] = useState<string>("GHS");
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        try {
+            const url = new URL(window.location.href);
+            const sp = url.searchParams;
+            const sendAmt = sp.get("sendAmount") || "0";
+            const sendCur = sp.get("sendCurrency") || "NGN";
+            const recvAmt = sp.get("receiveAmount") || "0.00";
+            const recvCur = sp.get("receiveCurrency") || "GHS";
+            setSendAmountParam(sendAmt);
+            setSendCurrencyParam(sendCur);
+            setReceiveAmountParam(recvAmt);
+            setReceiveCurrencyParam(recvCur);
+        } catch (e) {
+            // ignore malformed URL
+        }
+    }, []);
 
     const formatAmount = (val: string) => {
         const num = Number(val.replace(/,/g, ""));
@@ -394,5 +411,9 @@ export default function SendMoneyRecipientPage() {
         </div>
         </div>
     );
+}
+
+export default function SendMoneyRecipientPage() {
+    return <RecipientInner />;
 }
 
