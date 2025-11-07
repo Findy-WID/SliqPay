@@ -31,7 +31,7 @@ pragma solidity ^0.8.20;
  * └──────────────────────────────────────────────────────────────┘
  *
  * Key Design Decisions:
- * - Uses SliqIDs (@username) instead of addresses for improved UX
+ * - Uses SliqIDs (user123name) instead of addresses for improved UX
  * - Maintains internal ledger for gas-efficient balance tracking
  * - Supports both native (ETH/GLMR) and ERC20 tokens
  * - Operator role allows backend to facilitate conversions
@@ -104,9 +104,9 @@ contract TreasuryVault {
      * @dev Mapping structure: SliqID => Token Address => Balance
      *
      * Example state:
-     * sliqBalances["@alice"][USDT_ADDRESS] = 1000 * 10^6  (1000 USDT)
-     * sliqBalances["@alice"][address(0)] = 2 * 10^18     (2 ETH)
-     * sliqBalances["@bob"][USDC_ADDRESS] = 500 * 10^6    (500 USDC)
+     * sliqBalances["\alice"][USDT_ADDRESS] = 1000 * 10^6  (1000 USDT)
+     * sliqBalances["\alice"][address(0)] = 2 * 10^18     (2 ETH)
+     * sliqBalances["\bob"][USDC_ADDRESS] = 500 * 10^6    (500 USDC)
      *
      * Why this structure?
      * - O(1) lookup for any SliqID + token combination
@@ -386,7 +386,7 @@ contract TreasuryVault {
      * 3. Credit recipient's internal ledger
      * 4. Emit events for tracking
      *
-     * @param recipientSliqId The SliqID to receive payment (e.g., "@maryam")
+     * @param recipientSliqId The SliqID to receive payment (e.g., "\maryam")
      * @param token The ERC20 token contract address
      * @param amount The amount to transfer (in token's smallest unit)
      *
@@ -408,11 +408,11 @@ contract TreasuryVault {
      * // 1. User approves TreasuryVault
      * usdt.approve(treasuryVaultAddress, 1000 * 10**6);
      *
-     * // 2. User routes payment to @bob
-     * treasuryVault.routePayment("@bob", usdtAddress, 1000 * 10**6);
+     * // 2. User routes payment to bob
+     * treasuryVault.routePayment("\bob", usdtAddress, 1000 * 10**6);
      *
-     * // 3. @bob's balance increases
-     * // sliqBalances["@bob"][usdt] = 1000 * 10**6
+     * // 3. bob's balance increases
+     * // sliqBalances["\bob"][usdt] = 1000 * 10**6
      * ```
      *
      * Security:
@@ -462,7 +462,7 @@ contract TreasuryVault {
      * 3. Credit recipient's internal ledger (using address(0) as token identifier)
      * 4. Emit events for tracking
      *
-     * @param recipientSliqId The SliqID to receive payment (e.g., "@alice")
+     * @param recipientSliqId The SliqID to receive payment (e.g., "\alice")
      *
      * Requirements:
      * - Contract must not be paused
@@ -477,11 +477,11 @@ contract TreasuryVault {
      *
      * Example Usage:
      * ```solidity
-     * // Send 1 ETH to @charlie
-     * treasuryVault.routePaymentNative{value: 1 ether}("@charlie");
+     * // Send 1 ETH to charlie
+     * treasuryVault.routePaymentNative{value: 1 ether}("\charlie");
      *
-     * // @charlie's native token balance increases
-     * // sliqBalances["@charlie"][address(0)] = 1 ether
+     * // charlie's native token balance increases
+     * // sliqBalances["\charlie"][address(0)] = 1 ether
      * ```
      *
      * Why separate function for native tokens?
@@ -605,11 +605,11 @@ contract TreasuryVault {
      *
      * Example Usage:
      * ```solidity
-     * // Get @alice's USDT balance
-     * uint256 usdtBalance = vault.getBalance("@alice", usdtAddress);
+     * // Get alice's USDT balance
+     * uint256 usdtBalance = vault.getBalance("\alice", usdtAddress);
      *
-     * // Get @bob's native token balance
-     * uint256 ethBalance = vault.getBalance("@bob", address(0));
+     * // Get bob's native token balance
+     * uint256 ethBalance = vault.getBalance("\bob", address(0));
      * ```
      *
      * Frontend Integration:
@@ -645,7 +645,7 @@ contract TreasuryVault {
      * tokens[1] = usdcAddress;
      * tokens[2] = address(0);  // Native token
      *
-     * uint256[] memory balances = vault.getBalances("@alice", tokens);
+     * uint256[] memory balances = vault.getBalances("\alice", tokens);
      * // balances[0] = USDT balance
      * // balances[1] = USDC balance
      * // balances[2] = Native token balance
@@ -654,7 +654,7 @@ contract TreasuryVault {
      * Frontend Dashboard:
      * ```javascript
      * const tokens = [USDT_ADDR, USDC_ADDR, DAI_ADDR, NATIVE];
-     * const balances = await vault.getBalances("@alice", tokens);
+     * const balances = await vault.getBalances("\alice", tokens);
      *
      * // Display all balances in single UI render
      * balances.forEach((bal, i) => {
@@ -717,14 +717,14 @@ contract TreasuryVault {
      *
      * Example:
      * ```solidity
-     * // @alice has 1000 USDT, wants to send 100 USDT worth of USDC to @bob
+     * // alice has 1000 USDT, wants to send 100 USDT worth of USDC to bob
      * // Oracle rates: USDT = 1500 NGN, USDC = 1500 NGN (1:1 conversion)
      *
-     * vault.convertAsset("@alice", "@bob", usdtAddr, usdcAddr, 100 * 10**6);
+     * vault.convertAsset("\alice", "\bob", usdtAddr, usdcAddr, 100 * 10**6);
      *
      * // Result:
-     * // @alice USDT: 900 * 10**6 (1000 - 100)
-     * // @bob USDC: +100 * 10**6 (100 USDC equivalent)
+     * // alice USDT: 900 * 10**6 (1000 - 100)
+     * // bob USDC: +100 * 10**6 (100 USDC equivalent)
      * ```
      *
      * Example with different rates:
@@ -732,11 +732,11 @@ contract TreasuryVault {
      * // Oracle rates: USDT = 1500 NGN, DAI = 1485 NGN (DAI slightly depegged)
      * // Converting 100 USDT to DAI
      *
-     * vault.convertAsset("@alice", "@bob", usdtAddr, daiAddr, 100 * 10**18);
+     * vault.convertAsset("\alice", "\bob", usdtAddr, daiAddr, 100 * 10**18);
      *
      * // Conversion: (100 * 1500) / 1485 ≈ 101.01 DAI
-     * // @alice USDT: -100
-     * // @bob DAI: +101.01 (gets more DAI due to depeg)
+     * // alice USDT: -100
+     * // bob DAI: +101.01 (gets more DAI due to depeg)
      * ```
      *
      * Security:

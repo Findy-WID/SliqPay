@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
  * @notice Interface for the SliqID Registry contract that manages user identity mappings
  * @dev This interface defines the core functions for resolving SliqIDs to wallet addresses
  *
- * SliqID is a human-readable identifier (e.g., "@maryam") that maps to a wallet address.
+ * SliqID is a human-readable identifier (e.g., "\maryam") that maps to a wallet address.
  * This registry serves as the universal identity layer for the SliqPay ecosystem,
  * enabling both Web3 users (with their own wallets) and Web2 users (with custodial wallets)
  * to interact seamlessly.
@@ -15,7 +15,7 @@ pragma solidity ^0.8.20;
 interface ISliqIDRegistry {
     /**
      * @notice Emitted when a new SliqID is successfully registered
-     * @param sliqId The unique SliqID that was registered (e.g., "@showict")
+     * @param sliqId The unique SliqID that was registered (e.g., "\showict")
      * @param wallet The Ethereum address associated with this SliqID
      * @param timestamp The block timestamp when registration occurred
      */
@@ -43,7 +43,7 @@ interface ISliqIDRegistry {
      * @notice Resolves a SliqID to its associated wallet address
      * @dev This is the primary function used by TreasuryVault for payment routing
      *
-     * @param sliqId The SliqID to resolve (e.g., "@john")
+     * @param sliqId The SliqID to resolve (e.g., "\john")
      * @return wallet The Ethereum address associated with this SliqID
      *
      * Requirements:
@@ -51,7 +51,7 @@ interface ISliqIDRegistry {
      * - SliqID format should be validated by the implementing contract
      *
      * Example:
-     *   resolveAddress("@maryam") => 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+     *   resolveAddress("\maryam") => 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
      */
     function resolveAddress(string memory sliqId)
         external

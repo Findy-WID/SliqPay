@@ -25,7 +25,7 @@ contract MockSliqIDRegistry is ISliqIDRegistry {
                            STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Maps SliqID to wallet address (e.g., "@maryam" => 0x123...)
+    /// @dev Maps SliqID to wallet address (e.g., "\maryam" => 0x123...)
     mapping(string => address) private sliqIdToWallet;
 
     /// @dev Reverse mapping: wallet address to SliqID
@@ -66,7 +66,7 @@ contract MockSliqIDRegistry is ISliqIDRegistry {
      * @notice Registers a new SliqID and maps it to a wallet address
      * @dev For testing purposes, anyone can call this (production would restrict access)
      *
-     * @param sliqId The unique SliqID to register (e.g., "@john")
+     * @param sliqId The unique SliqID to register (e.g., "\john")
      * @param wallet The Ethereum address to associate with this SliqID
      *
      * Requirements:
@@ -80,7 +80,7 @@ contract MockSliqIDRegistry is ISliqIDRegistry {
      *
      * Example:
      * ```solidity
-     * registry.registerSliqID("@alice", 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb);
+     * registry.registerSliqID("\alice", 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb);
      * ```
      */
     function registerSliqID(string memory sliqId, address wallet) external {
@@ -198,7 +198,7 @@ contract MockSliqIDRegistry is ISliqIDRegistry {
      * @return sliqId The associated SliqID (or empty string if none)
      *
      * Useful for displaying user identifiers in UIs:
-     * - Show "@alice" instead of "0x742d...5f0bEb"
+     * - Show "\alice" instead of "0x742d...5f0bEb"
      * - Lookup sender's SliqID when displaying transaction history
      * - Verify wallet ownership of SliqID
      */
@@ -229,8 +229,8 @@ contract MockSliqIDRegistry is ISliqIDRegistry {
      * Example:
      * ```solidity
      * string[] memory ids = new string[](2);
-     * ids[0] = "@alice";
-     * ids[1] = "@bob";
+     * ids[0] = "\alice";
+     * ids[1] = "\bob";
      *
      * address[] memory wallets = new address[](2);
      * wallets[0] = address(0x1);
