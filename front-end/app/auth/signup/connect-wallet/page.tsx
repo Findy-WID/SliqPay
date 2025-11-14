@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { metamaskConnect, coinbaseConnect, binanceConnect } from "@/utils/walletConnectors";
 
 export default function ConnectWallet() {
   return (
@@ -18,12 +19,20 @@ export default function ConnectWallet() {
         <p className="text-sm text-gray-500">Enter wallet ID to get started</p>
 
         <div className="mt-6 space-y-3">
-          <button className="w-full rounded-2xl border-2 border-sky-300 bg-white p-4 flex items-center justify-between">
+          <button
+            onClick={async() => {const address = await metamaskConnect(); console.log("User is connected", address);}}
+            className="w-full rounded-2xl border-2 border-sky-300 bg-white p-4 flex items-center justify-between">
             <span className="flex items-center gap-2"><span className="text-2xl">🦊</span> MetaMask</span>
             <span className="text-blue-600">Connect</span>
           </button>
-          <button className="w-full rounded-2xl border-2 border-gray-200 bg-white p-4 text-left">⬤ Coinbase Wallet</button>
-          <button className="w-full rounded-2xl border-2 border-gray-200 bg-white p-4 text-left">◇ Binance Wallet</button>
+
+          <button 
+            onClick={async() => {const address = await coinbaseConnect(); console.log("User is connected", address);}}
+            className="w-full rounded-2xl border-2 border-gray-200 bg-white p-4 text-left">⬤ Coinbase Wallet</button>
+
+          <button 
+            onClick={async() => {const address = await binanceConnect(); console.log("User is connected", address);}}
+            className="w-full rounded-2xl border-2 border-gray-200 bg-white p-4 text-left">◇ Binance Wallet</button>
         </div>
 
         <p className="mt-4 text-sm text-gray-600">By connecting your wallet, you agree to <span className="text-blue-600">Sliqpay Terms of Service</span></p>
