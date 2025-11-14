@@ -1,0 +1,14 @@
+{
+  "network": "moonbase-alpha",
+  "chainId": 1287,
+  "deployer": "0x536975e9E6af75045c1a03cCf1CD8B9590E2cB7f",
+  "deployedAt": "2025-11-10T19:51:11Z",
+  "contracts": {
+    "MockSliqIDRegistry": "",
+    "MockFxOracle": "",
+    "TreasuryVault": "",
+    "MockUSDT": "",
+    "MockUSDC": "",
+    "MockDAI": ""
+  }
+}
