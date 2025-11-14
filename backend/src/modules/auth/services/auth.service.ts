@@ -2,6 +2,7 @@ import { UserRepositoryPrisma } from '../../users/repositories/user.prisma.repos
 import { AccountRepositoryPrisma } from '../../users/repositories/account.prisma.repository.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { env } from '../../../config/env.js';
 
 const Repo = UserRepositoryPrisma;
@@ -14,16 +15,17 @@ export function publicUser(u: any) {
   return { id: u.id, email: u.email, firstName: u.first_name, lastName: u.last_name, createdAt: u.created_at };
 }
 
-export async function signup(fname: string, lname: string, email: string, password: string, phone: string, referralCode?: string) {
+export async function signup(fname: string, lname: string, email: string, password: string, phone?: string, referralCode?: string) {
   const existing = await Repo.findByEmail(email);
   if (existing) {
     throw { status: 400, message: 'Email already registered' };
   }
-  if (!phone) {
-    throw { status: 400, message: 'Phone number is required' };
-  }
+  // Phone is optional - generate a unique placeholder if not provided
+  // TODO: Add phone collection to signup flow and make it required
+  const phoneToUse = phone || `+000${randomUUID().replace(/-/g, '').slice(0, 11)}`;
+  
   const passwordHash = bcrypt.hashSync(password, 10);
-  const user = await Repo.create({ email, firstName: fname, lastName: lname, passwordHash, phone, referralCode });
+  const user = await Repo.create({ email, firstName: fname, lastName: lname, passwordHash, phone: phoneToUse, referralCode });
   // Create a default NGN account with 25,000 starting balance
   try {
     await AccountRepositoryPrisma.create({ userId: user.id, balance: 25000, currency: 'NGN' });

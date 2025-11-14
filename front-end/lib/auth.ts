@@ -48,6 +48,21 @@ export async function signup(fname: string, lname: string, email: string, passwo
         referral_code: referralCode,
       }
     });
+    
+    // Create a default NGN account with 25,000 starting balance
+    try {
+      await prisma.account.create({
+        data: {
+          user_id: user.id,
+          balance: 25000,
+          currency: 'NGN',
+        }
+      });
+    } catch (e) {
+      console.error('Failed to create account for new user:', e);
+      // Non-fatal: account can be created later
+    }
+    
     const token = sign(user.id);
     return { user: publicUser(user), token };
   } catch (error) {

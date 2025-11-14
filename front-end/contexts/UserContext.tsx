@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { getAccountsByUser, Account } from "@/lib/accounts";
 
 interface UserData {
@@ -43,15 +43,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetch account when user is set
-  useEffect(() => {
-    if (user?.userId) {
-      refreshAccount();
-    }
-  }, [user?.userId]);
-
-  // Fetch account balance from backend
-  const refreshAccount = async () => {
+  // Fetch account balance from backend - memoized to prevent infinite loops
+  const refreshAccount = useCallback(async () => {
     if (!user?.userId) return;
     
     setIsLoadingAccount(true);
@@ -70,7 +63,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoadingAccount(false);
     }
-  };
+  }, [user?.userId]);
+
+  // Fetch account when user is set
+  useEffect(() => {
+    if (user?.userId) {
+      refreshAccount();
+    }
+  }, [user?.userId, refreshAccount]);
 
   // Sync user data to localStorage whenever it changes
   const setUser = (userData: UserData | null) => {
