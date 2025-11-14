@@ -1,4 +1,5 @@
 import { UserRepositoryPrisma } from '../../users/repositories/user.prisma.repository.js';
+import { AccountRepositoryPrisma } from '../../users/repositories/account.prisma.repository.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../../../config/env.js';
@@ -23,6 +24,12 @@ export async function signup(fname: string, lname: string, email: string, passwo
   }
   const passwordHash = bcrypt.hashSync(password, 10);
   const user = await Repo.create({ email, firstName: fname, lastName: lname, passwordHash, phone, referralCode });
+  // Create a default NGN account with 25,000 starting balance
+  try {
+    await AccountRepositoryPrisma.create({ userId: user.id, balance: 25000, currency: 'NGN' });
+  } catch (e) {
+    // Non-fatal: account can be created later, but log in real system
+  }
   const token = sign(user.id);
   return { user: publicUser(user), token };
 }
