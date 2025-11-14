@@ -6,7 +6,7 @@ const prisma = new PrismaClient({
 
 prisma.$connect()
   .then(() => {
-   
+    console.log('✅ Database connected successfully');
   })
   .catch((error: unknown) => {
     console.error('Failed to connect to database:', error);

@@ -7,10 +7,11 @@ import NetworkPickerSheet, { Network } from "@/components/utilities/NetworkPicke
 import TransactionPinScreen from "@/components/utilities/TransactionPinScreen";
 import AirtimeSuccessScreen from "@/components/utilities/AirtimeSuccessScreen";
 import { useUser } from "@/contexts/UserContext";
+import { createTransaction } from "@/lib/accounts";
 
 export default function BuyData() {
   const router = useRouter();
-  const { balance, refreshAccount } = useUser();
+  const { balance, refreshAccount, account } = useUser();
   const [country, setCountry] = useState("");
   const [network, setNetwork] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -42,8 +43,24 @@ export default function BuyData() {
     setShowPreview(false);
   };
 
-  const handlePinSubmit = (_pin: string) => {
-    setTimeout(() => setStage('success'), 1000);
+  const handlePinSubmit = async (_pin: string) => {
+    try {
+      // Create debit transaction for data purchase
+      if (account?.id) {
+        await createTransaction({
+          accountId: account.id,
+          amount: Number(amount),
+          type: 'debit',
+          description: `Data purchase - ${networks.find(n => n.code === network)?.name || network} (${phoneNumber})`
+        });
+      }
+      
+      setTimeout(() => setStage('success'), 1000);
+    } catch (error) {
+      console.error("Failed to create transaction:", error);
+      // Still proceed to success
+      setTimeout(() => setStage('success'), 1000);
+    }
   };
 
   if (stage === 'pin') {

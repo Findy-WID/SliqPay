@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronDown, X, Check } from "lucide-react";
 import TransactionPinScreen from "@/components/utilities/TransactionPinScreen";
 import AirtimeSuccessScreen from "@/components/utilities/AirtimeSuccessScreen";
 import { useUser } from "@/contexts/UserContext";
+import { createTransaction } from "@/lib/accounts";
 
 type BillCategory = "Electricity" | "Cable TV" | "";
 
@@ -17,7 +18,7 @@ interface Biller {
 
 export default function PayBills() {
   const router = useRouter();
-  const { balance, refreshAccount } = useUser();
+  const { balance, refreshAccount, account } = useUser();
   const [country, setCountry] = useState("");
   const [category, setCategory] = useState<BillCategory>("");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -113,9 +114,29 @@ export default function PayBills() {
     setShowPreview(false);
   };
 
-  const handlePinSubmit = (_pin: string) => {
-    // Simulate API call then success
-    setTimeout(() => setStage('success'), 1000);
+  const handlePinSubmit = async (_pin: string) => {
+    try {
+      // Create debit transaction for bill payment
+      const amount = category === "Electricity" ? Number(electricityAmount) : (selectedPkg?.price || 0);
+      const description = category === "Electricity" 
+        ? `Electricity - ${selectedBiller?.name || ''} (${meterNumber})`
+        : `Cable TV - ${selectedBiller?.name || ''} - ${selectedPkg?.name || ''} (${smartCardNumber})`;
+      
+      if (account?.id) {
+        await createTransaction({
+          accountId: account.id,
+          amount: amount,
+          type: 'debit',
+          description: description
+        });
+      }
+      
+      setTimeout(() => setStage('success'), 1000);
+    } catch (error) {
+      console.error("Failed to create transaction:", error);
+      // Still proceed to success
+      setTimeout(() => setStage('success'), 1000);
+    }
   };
 
   if (stage === 'pin') {

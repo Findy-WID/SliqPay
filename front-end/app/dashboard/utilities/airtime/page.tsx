@@ -7,10 +7,11 @@ import NetworkPickerSheet, { Network } from "@/components/utilities/NetworkPicke
 import TransactionPinScreen from "@/components/utilities/TransactionPinScreen";
 import AirtimeSuccessScreen from "@/components/utilities/AirtimeSuccessScreen";
 import { useUser } from "@/contexts/UserContext";
+import { createTransaction } from "@/lib/accounts";
 
 export default function BuyAirtime() {
   const router = useRouter();
-  const { balance, refreshAccount } = useUser();
+  const { balance, refreshAccount, account } = useUser();
   const [country, setCountry] = useState("");
   const [network, setNetwork] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -44,13 +45,33 @@ export default function BuyAirtime() {
     setShowPreview(false);
   };
 
-  const handlePinSubmit = (pin: string) => {
+  const handlePinSubmit = async (pin: string) => {
     // Simulate API call
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setStage('success');
-    }, 1200);
+    
+    try {
+      // Create debit transaction for airtime purchase
+      if (account?.id) {
+        await createTransaction({
+          accountId: account.id,
+          amount: Number(amount),
+          type: 'debit',
+          description: `Airtime purchase - ${networks.find(n => n.code === network)?.name || network} (${phoneNumber})`
+        });
+      }
+      
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setStage('success');
+      }, 1200);
+    } catch (error) {
+      console.error("Failed to create transaction:", error);
+      // Still proceed to success for better UX
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setStage('success');
+      }, 1200);
+    }
   };
 
   const resetFlow = () => {

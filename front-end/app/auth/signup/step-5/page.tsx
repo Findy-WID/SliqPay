@@ -2,19 +2,85 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import SignupProgress from "@/components/SignupProgress";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Step5() {
+  const router = useRouter();
+  const { user, updateUser } = useUser();
   const [pw, setPw] = useState("");
   const [cpw, setCPw] = useState("");
   const [show1, setShow1] = useState(false);
   const [show2, setShow2] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const criteria = [
     { label: '8 to 12 characters', ok: pw.length >= 8 && pw.length <= 12 },
     { label: 'At least 1 number', ok: /\d/.test(pw) },
     { label: 'At least 1 upper case letter', ok: /[A-Z]/.test(pw) },
   ];
+
+  const allCriteriaMet = criteria.every(c => c.ok);
+  const passwordsMatch = pw === cpw && cpw.length > 0;
+  const canSubmit = allCriteriaMet && passwordsMatch && !isLoading;
+
+  const handleSignup = async () => {
+    if (!canSubmit) return;
+    
+    setError("");
+    setIsLoading(true);
+
+    try {
+      // Get data from user context
+      if (!user?.email || !user?.name) {
+        throw new Error("Missing user data. Please start from step 1.");
+      }
+
+      // Split name into first and last name
+      const nameParts = user.name.split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Call backend signup API
+      const response = await fetch("http://localhost:4000/api/v1/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fname: firstName,
+          lname: lastName,
+          email: user.email,
+          password: pw,
+          // Phone is optional - don't send it if not collected
+          // TODO: Add phone collection in signup flow
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Signup failed");
+      }
+
+      const data = await response.json();
+      
+      // Update user context with userId from backend
+      updateUser({ userId: data.user.id });
+
+      // Store token
+      localStorage.setItem("sliqpay_token", data.token);
+
+      // Navigate to connect wallet
+      router.push("/auth/signup/connect-wallet");
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      setError(err.message || "Failed to create account. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f7fbff] relative p-6">
@@ -58,7 +124,23 @@ export default function Step5() {
           </div>
         </div>
 
-        <Link href="/dashboard" className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-700">Complete Sign up</Link>
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <button 
+          onClick={handleSignup}
+          disabled={!canSubmit}
+          className={`mt-8 inline-flex w-full items-center justify-center rounded-xl px-4 py-3 font-medium text-white ${
+            canSubmit 
+              ? 'bg-green-600 hover:bg-green-700' 
+              : 'bg-gray-300 cursor-not-allowed'
+          }`}
+        >
+          {isLoading ? "Creating account..." : "Continue"}
+        </button>
       </div>
     </div>
   );

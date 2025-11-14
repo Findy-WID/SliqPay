@@ -1,10 +1,11 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import { SendIcon, ReceiveIcon, ConvertIcon, AirtimeIcon, BillsIcon } from "@/components/icons";
-import { Menu, Bell, Eye, EyeOff, RefreshCw, Home, Receipt, Repeat, Wallet, Settings, X } from "lucide-react";
+import { Menu, Bell, Eye, EyeOff, RefreshCw, Home, Receipt, Repeat, Wallet, Settings, X, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
+import { getTransactionsByAccount, Transaction } from "@/lib/accounts";
 
 // Skeleton component for loading state
 function DashboardSkeleton() {
@@ -85,14 +86,35 @@ function DashboardSkeleton() {
 
 export default function DashboardHome() {
     const router = useRouter();
-    const { user, balance, isLoadingAccount, refreshAccount } = useUser();
+    const { user, balance, isLoadingAccount, refreshAccount, account } = useUser();
     const [currency, setCurrency] = useState("NGN");
     const [showBalance, setShowBalance] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [accountsOpen, setAccountsOpen] = useState(false);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
 
     const wallet = "0x4A8C...E52B";
+
+    // Fetch transactions
+    const fetchTransactions = async () => {
+        if (!account?.id) return;
+        
+        setLoadingTransactions(true);
+        try {
+            const { transactions: data } = await getTransactionsByAccount(account.id);
+            // Sort by date, newest first, and take only the 3 most recent
+            const sorted = data
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .slice(0, 3);
+            setTransactions(sorted);
+        } catch (err) {
+            console.error("Failed to fetch transactions:", err);
+        } finally {
+            setLoadingTransactions(false);
+        }
+    };
 
     // Simulate data loading and refresh account on mount
     useEffect(() => {
@@ -105,6 +127,13 @@ export default function DashboardHome() {
         
         return () => clearTimeout(timer);
     }, [refreshAccount]);
+
+    // Fetch transactions when account is available
+    useEffect(() => {
+        if (account?.id) {
+            fetchTransactions();
+        }
+    }, [account?.id]);
 
     // Map currency codes to their flag emoji
     const currencyFlag = (code: string) => {
@@ -136,10 +165,16 @@ export default function DashboardHome() {
         
     ];
 
-    const transactions = [
-        { id: 1, title: "Received from @Allan", amount: "3,000 KES", status: "Successful", time: "Sep 26th, 18:11:32", type: "receive" },
-        { id: 2, title: "Withdrew to NGN bank account", amount: "$25", status: "Successful", time: "Sep 26th, 18:11:32", type: "withdraw" },
-    ];
+    // Helper function to format transaction date
+    const formatTransactionDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
     const menuItems = [
         { icon: Home, label: "Home", href: "/dashboard" },

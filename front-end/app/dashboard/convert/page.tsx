@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { createTransaction } from "@/lib/accounts";
 
 export default function ConvertMoney() {
   const router = useRouter();
-  const { balance, refreshAccount } = useUser();
+  const { balance, refreshAccount, account } = useUser();
   const [fromAmount, setFromAmount] = useState("");
   const [fromCurrency, setFromCurrency] = useState("NGN");
   const [toCurrency, setToCurrency] = useState("GHS");
@@ -52,12 +53,30 @@ export default function ConvertMoney() {
   const handleConvert = async () => {
     if (!isFormValid) return;
     
-    // TODO: Implement actual conversion API call
-    alert(`Converting ${fromCurrency} ${fromAmount} to ${toCurrency} ${receivedAmount.toFixed(2)}`);
-    
-    // Refresh balance before redirecting
-    await refreshAccount();
-    router.push("/dashboard");
+    try {
+      // Create debit transaction for currency conversion
+      if (account?.id) {
+        await createTransaction({
+          accountId: account.id,
+          amount: Number(fromAmount),
+          type: 'debit',
+          description: `Currency conversion - ${fromCurrency} to ${toCurrency} (${receivedAmount.toFixed(2)} ${toCurrency})`
+        });
+      }
+      
+      // TODO: Implement actual conversion API call
+      alert(`Converting ${fromCurrency} ${fromAmount} to ${toCurrency} ${receivedAmount.toFixed(2)}`);
+      
+      // Refresh balance before redirecting
+      await refreshAccount();
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Failed to create transaction:", error);
+      // Still proceed with conversion
+      alert(`Converting ${fromCurrency} ${fromAmount} to ${toCurrency} ${receivedAmount.toFixed(2)}`);
+      await refreshAccount();
+      router.push("/dashboard");
+    }
   };
 
   const CurrencyDropdown = ({

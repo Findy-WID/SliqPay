@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import SignupProgress from "@/components/SignupProgress";
 
 export default function Step2() {
   const [code, setCode] = useState<string[]>(["", "", "", "", "", ""]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   return (
     <div className="min-h-screen bg-[#f7fbff] relative p-6">
@@ -26,11 +27,41 @@ export default function Step2() {
 
         <div className="mt-6 flex gap-3">
           {code.map((c, i) => (
-            <input key={i} value={c} onChange={(e)=>{
+            <input 
+              key={i} 
+              ref={(el) => { inputRefs.current[i] = el; }}
+              value={c} 
+              onChange={(e)=>{
                 const v = e.target.value.replace(/\D/g, '').slice(0,1);
                 setCode(prev=> prev.map((pv,idx)=> idx===i? v: pv));
+                
+                // Auto-focus next input when value is entered
+                if (v && i < 5) {
+                  inputRefs.current[i + 1]?.focus();
+                }
               }}
-              className="h-12 w-12 rounded-xl bg-gray-100 border border-gray-200 text-center text-lg outline-none"/>
+              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                // Handle backspace to go to previous input
+                if (e.key === 'Backspace' && !code[i] && i > 0) {
+                  inputRefs.current[i - 1]?.focus();
+                }
+              }}
+              onPaste={(e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                const newCode = [...code];
+                
+                for (let j = 0; j < pastedData.length && i + j < 6; j++) {
+                  newCode[i + j] = pastedData[j];
+                }
+                
+                setCode(newCode);
+                
+                // Focus the next empty input or the last input
+                const nextIndex = Math.min(i + pastedData.length, 5);
+                inputRefs.current[nextIndex]?.focus();
+              }}
+              className="h-12 w-12 rounded-xl bg-gray-100 border border-gray-200 text-center text-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"/>
           ))}
         </div>
 
