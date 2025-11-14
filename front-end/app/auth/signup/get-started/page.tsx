@@ -36,7 +36,7 @@ export default function GetStarted() {
             }`}
           >
             <div className="flex gap-3">
-              <div className="mt-1">📧</div>
+              <div className="mt-1"></div>
               <div>
                 <p className="font-semibold">Sign Up with Email</p>
                 <p className="text-sm text-gray-600">Ideal if you want to send, receive, and manage fiat payments or link bank accounts</p>
@@ -44,7 +44,7 @@ export default function GetStarted() {
             </div>
           </button>
 
-          <button
+          {/* <button
             type="button"
             role="radio"
             aria-checked={selection === "wallet"}
@@ -56,13 +56,13 @@ export default function GetStarted() {
             }`}
           >
             <div className="flex gap-3">
-              <div className="mt-1">💼</div>
+              <div className="mt-1"></div>
               <div>
                 <p className="font-semibold">Connect Wallet</p>
                 <p className="text-sm text-gray-600">Use your existing crypto wallet to access blockchain-based services and digital assets</p>
               </div>
             </div>
-          </button>
+          </button> */}
         </div>
 
         <div className="mt-8">

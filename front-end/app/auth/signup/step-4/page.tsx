@@ -1,9 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import SignupProgress from "@/components/SignupProgress";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Step4() {
+  const { updateUser } = useUser();
+  const hasUpdated = useRef(false);
+  
+  // Mock data - in real app, this would come from API response
+  const fullName = "Maryam Oluwabunmi Lawal";
+  
+  useEffect(() => {
+    // Only update once
+    if (hasUpdated.current) return;
+    
+    // Get initials from full name
+    const nameParts = fullName.split(" ");
+    const initials = nameParts.length >= 2 
+      ? nameParts[0][0] + nameParts[nameParts.length - 1][0] 
+      : nameParts[0][0];
+    
+    // Update user context with full name and initials
+    updateUser({
+      name: fullName,
+      initials: initials.toUpperCase()
+    });
+    
+    hasUpdated.current = true;
+  }, []); // Empty dependency array - only run once on mount
+
   return (
     <div className="min-h-screen bg-[#f7fbff] relative p-6">
       <div className="pointer-events-none absolute -top-10 right-[-20%] h-64 w-64 rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#d9f3ff] to-transparent blur-2xl opacity-70"/>

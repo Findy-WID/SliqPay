@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma.js';
 
 export const AccountRepositoryPrisma = {
   async findById(id: string) {
@@ -12,7 +11,7 @@ export const AccountRepositoryPrisma = {
     return prisma.account.create({
       data: {
         user_id: data.userId,
-        balance: data.balance ?? 0,
+        balance: data.balance ?? 25000,
         currency: data.currency ?? 'NGN',
       },
     });

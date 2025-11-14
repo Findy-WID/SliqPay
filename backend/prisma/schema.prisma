@@ -31,7 +31,7 @@ model Account {
   id        String        @id @default(uuid())
   user      User          @relation(fields: [user_id], references: [id])
   user_id   String
-  balance   Float         @default(0)
+  balance   Float         @default(25000)
   currency  String        @default("NGN")
   created_at DateTime     @default(now())
   updated_at DateTime     @updatedAt
