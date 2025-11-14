@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Lock, ArrowUpDown } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
 
 function RecipientInner() {
     const router = useRouter();
+    const { refreshAccount } = useUser();
     const [accountNumber, setAccountNumber] = useState("");
     const [accountName, setAccountName] = useState("");
     const [bankName, setBankName] = useState("");
@@ -400,7 +402,10 @@ function RecipientInner() {
                     {/* Actions */}
                     <div className="mt-5 grid grid-cols-1">
                         <button
-                            onClick={() => setShowSuccess(false)}
+                            onClick={async () => {
+                                await refreshAccount();
+                                router.push('/dashboard');
+                            }}
                             className="h-11 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700"
                         >
                             Done
