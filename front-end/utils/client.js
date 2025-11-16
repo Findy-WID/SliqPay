@@ -12,10 +12,10 @@ const FXORACLE_ADDRESS = process.env.NEXT_FX_ORACLE_ADDRESS;
 const MOONBASE_RPC_URL = process.env.NEXT_MOONBASE_RPC_URL;
 
 // Viem client setup
-const publicClient = createPublicClient({
+export const publicClient = createPublicClient({
   chain: {
     ...moonbaseAlpha,
-    rpcUrls: { default: { http: [MOONBASE_RPC_URL] } },
+    rpcUrls: { default: { http: [NEXT_PUBLIC_MOONBASE_RPC_URL] } },
   },
   transport: http(MOONBASE_RPC_URL),
 });
