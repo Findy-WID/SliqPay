@@ -1,6 +1,6 @@
 # SliqPay Backend
 
-Express + TypeScript API providing auth (signup/login/logout/me) and health check. Currently uses in‑memory storage (no DB yet).
+Express + TypeScript API providing auth (signup/login/logout/me), Accounts and Transactions with PostgreSQL (Prisma).
 
 ## Tech Stack
 - Express (API)
@@ -54,11 +54,15 @@ backend/
 ```
 
 ## Environment
-Create `.env`:
+Create `backend/.env` (values below are examples; use your Supabase project credentials):
 ```
 PORT=4000
 JWT_SECRET=change_this_to_a_long_random_string_at_least_32_chars
 NODE_ENV=development
+# PostgreSQL (Supabase)
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR-PROJECT.supabase.co:5432/postgres?sslmode=require
+# Optional: used by Prisma migrate/introspection when a non-pooled direct URL is required
+DIRECT_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR-PROJECT.supabase.co:5432/postgres?sslmode=require
 # Redis (optional in dev, required in prod)
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
@@ -78,6 +82,31 @@ SMTP_PASS=your_smtp_pass
 RESET_TOKEN_TTL_SECONDS=900
 FRONTEND_URL=http://localhost:3000
 ```
+
+Note: Supabase requires SSL; keep `sslmode=require` on both URLs.
+
+## Database (Prisma + Supabase)
+
+1) Install deps and generate Prisma client
+```
+npm install
+npm run prisma:generate
+```
+
+2) Create and run migrations (first run will create the schema and defaults)
+```
+npm run prisma:migrate:dev
+```
+
+3) For CI/production, deploy migrations
+```
+npm run prisma:deploy
+```
+
+Key behavior implemented:
+- New users automatically get an NGN Account seeded with a 25,000 balance.
+- Account API creation endpoint also forces starting balance of 25,000.
+- Transactions atomically update the account balance (credit adds; debit subtracts with insufficient funds protection).
 
 ## Install & Run
 From repo root (workspaces):
@@ -104,6 +133,9 @@ npm start
 | dev           | Watch + run via tsx               |
 | build         | Compile TypeScript to dist        |
 | start         | Run compiled server               |
+| prisma:generate | Generate Prisma client          |
+| prisma:migrate:dev | Run dev migrations           |
+| prisma:deploy | Apply migrations in production    |
 | typecheck     | Type-only validation (if added)   |
 | lint          | Lint sources (if configured)      |
 

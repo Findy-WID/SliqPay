@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
 
 type SidebarProps = {
     className?: string;
@@ -11,6 +12,7 @@ type SidebarProps = {
 
 export default function Sidebar({ className, variant = "desktop" }: SidebarProps) {
     const pathname = usePathname();
+    const { user } = useUser();
 
     const wrapperClasses =
         variant === "desktop"
@@ -28,6 +30,25 @@ export default function Sidebar({ className, variant = "desktop" }: SidebarProps
                 </Link>
             </div>
 
+            {/* User Info - Only show on desktop variant */}
+            {variant === "desktop" && user && (
+                <div className="mb-6 pb-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center text-white text-sm font-bold">
+                            {user.initials || "U"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 text-sm truncate">{user.name || "User"}</h3>
+                        </div>
+                    </div>
+                    {user.sliqId && (
+                        <span className="inline-block px-3 py-1 bg-cyan-100 text-cyan-700 text-xs font-semibold rounded-full">
+                            {user.sliqId}
+                        </span>
+                    )}
+                </div>
+            )}
+
             {/* Minimal navigation (VTU removed) */}
             <nav className="space-y-1">
                 <Link
@@ -40,6 +61,17 @@ export default function Sidebar({ className, variant = "desktop" }: SidebarProps
                     )}
                 >
                     Dashboard
+                </Link>
+                <Link
+                    href="/dashboard/utilities"
+                    className={cn(
+                        linkBase,
+                        pathname.startsWith("/dashboard/utilities")
+                            ? "bg-blue-100 text-blue-700 border border-blue-200"
+                            : "text-gray-700 hover:bg-gray-100"
+                    )}
+                >
+                    Utilities
                 </Link>
                 <Link
                     href="/dashboard/history"

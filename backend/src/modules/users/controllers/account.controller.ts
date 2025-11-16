@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { AccountRepositoryPrisma } from '../repositories/account.prisma.repository.js';
 
 export const createAccount = async (req: Request, res: Response) => {
-  const { userId, balance, currency } = req.body;
+  const { userId, currency } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId is required' });
-  const account = await AccountRepositoryPrisma.create({ userId, balance, currency });
+  // Enforce starting balance of 25,000 for all new accounts
+  const account = await AccountRepositoryPrisma.create({ userId, balance: 25000, currency });
   res.status(201).json({ account });
 };
 

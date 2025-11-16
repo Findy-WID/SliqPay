@@ -8,11 +8,13 @@ import { useState } from 'react';
 import Sidebar from "@/components/dashboard/sidebar";
 import { X } from "lucide-react";
 import { HiOutlineMenu } from "react-icons/hi";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Navbar() {
     const pathName = usePathname();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const { user, clearUser } = useUser();
     const dashboard = pathName == "/dashboard";
     const history = pathName.startsWith("/dashboard/history");
 
@@ -31,10 +33,13 @@ export default function Navbar() {
           credentials: 'include' 
         });
         
+        // Clear user context data
+        clearUser();
        
       } catch (e) {
         console.error('Logout error:', e);
-        // continue with logout even if API call fails
+        // Clear user data even if API call fails
+        clearUser();
       } finally {
         setLoading(false);
         // Use a small delay before redirecting to ensure the cookie is cleared
@@ -85,8 +90,14 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3 text-gray-600">
-                <IoSettingsSharp />
-                <IoNotifications />
+                {/* Sliq ID Display */}
+                {user?.sliqId && (
+                  <span className="hidden sm:inline-block px-3 py-1 bg-cyan-100 text-cyan-700 text-xs font-semibold rounded-full">
+                    {user.sliqId}
+                  </span>
+                )}
+                <IoSettingsSharp className="cursor-pointer hover:text-gray-800 transition-colors" />
+                <IoNotifications className="cursor-pointer hover:text-gray-800 transition-colors" />
                 <button onClick={logout} disabled={loading} className="text-sm text-red-600 hover:underline disabled:opacity-50">{loading ? '...' : 'Logout'}</button>
         </div>
 

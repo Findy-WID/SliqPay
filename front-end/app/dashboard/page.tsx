@@ -1,9 +1,11 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import { SendIcon, ReceiveIcon, ConvertIcon, AirtimeIcon, BillsIcon } from "@/components/icons";
-import { Menu, Bell, Eye, EyeOff, RefreshCw, Home, Receipt, Repeat, Wallet, Settings, X } from "lucide-react";
+import { Menu, Bell, Eye, EyeOff, RefreshCw, Home, Receipt, Repeat, Wallet, Settings, X, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
+import { getTransactionsByAccount, Transaction } from "@/lib/accounts";
 
 // Skeleton component for loading state
 function DashboardSkeleton() {
@@ -84,23 +86,54 @@ function DashboardSkeleton() {
 
 export default function DashboardHome() {
     const router = useRouter();
+    const { user, balance, isLoadingAccount, refreshAccount, account } = useUser();
     const [currency, setCurrency] = useState("NGN");
     const [showBalance, setShowBalance] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [accountsOpen, setAccountsOpen] = useState(false);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-    const balance = useMemo(() => 25000, []);
     const wallet = "0x4A8C...E52B";
 
-    // Simulate data loading
+    // Fetch transactions
+    const fetchTransactions = async () => {
+        if (!account?.id) return;
+        
+        setLoadingTransactions(true);
+        try {
+            const { transactions: data } = await getTransactionsByAccount(account.id);
+            // Sort by date, newest first, and take only the 3 most recent
+            const sorted = data
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .slice(0, 3);
+            setTransactions(sorted);
+        } catch (err) {
+            console.error("Failed to fetch transactions:", err);
+        } finally {
+            setLoadingTransactions(false);
+        }
+    };
+
+    // Simulate data loading and refresh account on mount
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsLoading(false);
         }, 1500); // Simulate 1.5s loading time
         
+        // Refresh account balance when returning to dashboard
+        refreshAccount();
+        
         return () => clearTimeout(timer);
-    }, []);
+    }, [refreshAccount]);
+
+    // Fetch transactions when account is available
+    useEffect(() => {
+        if (account?.id) {
+            fetchTransactions();
+        }
+    }, [account?.id]);
 
     // Map currency codes to their flag emoji
     const currencyFlag = (code: string) => {
@@ -126,24 +159,30 @@ export default function DashboardHome() {
 
     const quickActions = [
         { label: "Send", icon: <SendIcon size={20} />, onClick: () => router.push("/dashboard/send") },
-        { label: "Receive", icon: <ReceiveIcon size={20} />, onClick: () => {} },
-        { label: "Convert", icon: <ConvertIcon size={20} />, onClick: () => {} },
-        { label: "Buy Airtime", icon: <AirtimeIcon size={20} />, onClick: () => {} },
-        { label: "Pay Bills", icon: <BillsIcon size={20} />, onClick: () => {} },
+        { label: "Receive", icon: <ReceiveIcon size={20} />, onClick: () => router.push("/dashboard/receive") },
+        { label: "Convert", icon: <ConvertIcon size={20} />, onClick: () => router.push("/dashboard/convert") },
+        { label: "Airtime & Utilities", icon: <AirtimeIcon size={20} />, onClick: () => router.push("/dashboard/utilities") },
+        
     ];
 
-    const transactions = [
-        { id: 1, title: "Received from @Allan", amount: "3,000 KES", status: "Successful", time: "Sep 26th, 18:11:32", type: "receive" },
-        { id: 2, title: "Withdrew to NGN bank account", amount: "$25", status: "Successful", time: "Sep 26th, 18:11:32", type: "withdraw" },
-    ];
+    // Helper function to format transaction date
+    const formatTransactionDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
     const menuItems = [
         { icon: Home, label: "Home", href: "/dashboard" },
         { icon: Receipt, label: "Transactions", href: "/dashboard/transactions" },
         { icon: Repeat, label: "Convert", href: "/dashboard/convert" },
         { icon: Wallet, label: "Wallets", href: "/dashboard/wallets" },
+        { icon: Receipt, label: "Utilities", href: "/dashboard/utilities" },
         { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-        { icon: Receipt, label: "Pay Bills", href: "/dashboard/bills" },
         { icon: SendIcon, label: "Send & Receive", href: "/dashboard/send-receive" },
     ];
 
@@ -153,7 +192,7 @@ export default function DashboardHome() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-6">
+        <div className="min-h-screen bg-gradient-to-br from-teal-50/30 via-green-50/20 to-cyan-50/30 pb-20">
             {/* Sidebar Overlay */}
             {sidebarOpen && (
                 <div 
@@ -188,13 +227,15 @@ export default function DashboardHome() {
                         {/* User Profile */}
                         <div className="flex items-center gap-3">
                             <div className="w-14 h-14 rounded-full bg-green-700 flex items-center justify-center text-white text-xl font-bold">
-                                OJ
+                                {user?.initials || "U"}
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">Olubukunmi Joy</h3>
-                                <span className="inline-block mt-1 px-3 py-1 bg-cyan-100 text-cyan-700 text-xs font-medium rounded-full">
-                                    0x4A8C...E52B
-                                </span>
+                                <h3 className="font-semibold text-gray-900">{user?.name || "User"}</h3>
+                                {user?.sliqId && (
+                                    <span className="inline-block mt-1 px-3 py-1 bg-cyan-100 text-cyan-700 text-xs font-semibold rounded-full">
+                                        {user.sliqId}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -217,154 +258,158 @@ export default function DashboardHome() {
                     </nav>
                 </div>
             </aside>
-            
 
-            <div className="px-4 space-y-5 mt-5">
-                {/* Balance section */}
-                <section className="bg-gradient-to-br from-green-50 via-cyan-50 to-teal-50 rounded-3xl p-6 shadow-md">
-                {/* Mobile Header */}
-            <header className="px-4 py-4 flex items-center justify-between sticky top-0 z-10 ">
-                {/* Hamburger Menu - Custom 3 bars */}
+            {/* Mobile Header */}
+            <header className="px-6 py-4 flex items-center justify-between">
+                {/* Hamburger Menu */}
                 <button 
-                    className="p-1 hover:opacity-70 transition-opacity"
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
                     onClick={() => setSidebarOpen(true)}
                 >
                     <div className="space-y-1.5">
-                        <div className="w-7 h-0.5 bg-gray-800 rounded-full"></div>
-                        <div className="w-5 h-0.5 bg-gray-800 rounded-full"></div>
-                        <div className="w-7 h-0.5 bg-gray-800 rounded-full"></div>
+                        <div className="w-6 h-0.5 bg-gray-800 rounded-full"></div>
+                        <div className="w-6 h-0.5 bg-gray-800 rounded-full"></div>
+                        <div className="w-6 h-0.5 bg-gray-800 rounded-full"></div>
                     </div>
                 </button>
                
-                {/* Notification Bell with Gradient Circle */}
-                <button className="relative p-2 rounded-full bg-gradient-to-br from-teal-200/60 via-cyan-200/50 to-teal-300/60 hover:from-teal-200 hover:via-cyan-200 hover:to-teal-300 transition-all">
-                    <div className="absolute inset-0.5 bg-gradient-to-b from-gray-50 to-white rounded-full"></div>
-                    <Bell size={22} className="text-gray-800 relative z-10" strokeWidth={2} />
+                {/* Notification Bell */}
+                <button className="p-3 rounded-full bg-white hover:bg-gray-50 transition-colors shadow-sm">
+                    <Bell size={20} className="text-gray-800" strokeWidth={2} />
                 </button>
             </header>
-                    <div className="flex items-center justify-center mb-6">
-                        <button
-                            type="button"
-                            onClick={() => setAccountsOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs shadow-sm border border-gray-100 hover:bg-gray-50"
-                            aria-haspopup="dialog"
-                            aria-expanded={accountsOpen}
-                            aria-controls="accounts-modal"
+
+            <div className="px-6 mt-6">
+                {/* Currency Selector */}
+                <div className="flex justify-center mb-8">
+                    <button
+                        type="button"
+                        onClick={() => setAccountsOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm shadow-sm hover:shadow transition-all"
+                    >
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-base">{currencyFlag(currency)}</span>
+                        <span className="text-sm font-semibold text-gray-900">{currency}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" className="text-gray-600"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                </div>
+
+                {/* Balance Section */}
+                <div className="mb-10">
+                    <p className="text-sm text-gray-600 mb-3 text-center">Your Balance</p>
+                    <div className="flex items-center justify-center gap-3 mb-6">
+                        <button className="w-12 h-12 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center text-2xl font-normal hover:bg-cyan-200 transition-colors">
+                            +
+                        </button>
+                        <h1 className="text-5xl font-bold text-green-600">
+                            {showBalance ? `₦${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "•••••••"}
+                        </h1>
+                        <button 
+                            className="p-3 hover:bg-white/50 rounded-lg transition-colors"
+                            onClick={() => setShowBalance((v) => !v)}
                         >
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span title={currency} aria-label={`${currency} flag`} className="text-lg">{currencyFlag(currency)}</span>
-                            <span className="text-sm font-semibold text-gray-800">{currency}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" className="text-gray-600" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            {showBalance ? <Eye size={22} className="text-gray-600" /> : <EyeOff size={22} className="text-gray-600" />}
                         </button>
                     </div>
 
-                    <div>
-                        <p className="text-xs text-gray-600 mb-3 text-center font-medium">Your Balance</p>
-                        <div className="flex items-center justify-center gap-4 mb-5">
-                            <button className="h-11 w-11 rounded-xl bg-cyan-200 text-green-600 flex items-center justify-center text-2xl font-light hover:bg-cyan-300 transition-colors">
-                                +
-                            </button>
-                            <p className="text-5xl font-bold text-green-600 tracking-tight">
-                                {showBalance ? `₦${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "•••••••"}
-                            </p>
-                            <button 
-                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-                                onClick={() => setShowBalance((v) => !v)}
-                            >
-                                {showBalance ? <Eye size={20} className="text-gray-600" /> : <EyeOff size={20} className="text-gray-600" />}
-                            </button>
-                        </div>
-
-                        <div className="flex justify-center mb-6">
-                            <button className="inline-flex items-center gap-1.5 rounded-full bg-cyan-100/70 px-4 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-cyan-100 transition-colors">
-                                {wallet}
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-5 gap-2">
-                            {quickActions.map((a) => (
-                                <button 
-                                    key={a.label} 
-                                    onClick={a.onClick}
-                                    className="flex flex-col items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-sm py-4 hover:bg-white hover:shadow-md transition-all"
-                                >
-                                    <span className="text-gray-700">{a.icon}</span>
-                                    <span className="text-[10px] text-gray-700 leading-tight text-center font-medium">{a.label}</span>
-                                </button>
-                            ))}
+                    <div className="flex justify-center mb-8">
+                        <div className="inline-block rounded-full bg-cyan-100 px-4 py-2">
+                            <span className="text-xs font-medium text-gray-700">{wallet}</span>
                         </div>
                     </div>
-                </section>
+
+                    {/* Quick Actions */}
+                    <div className="grid grid-cols-4 gap-4">
+                        {quickActions.map((action) => (
+                            <button
+                                key={action.label}
+                                onClick={action.onClick}
+                                className="group flex flex-col items-center focus:outline-none"
+                            >
+                                <div className="w-[72px] h-[72px] rounded-2xl bg-white/70 border border-cyan-100 grid place-items-center shadow-sm group-hover:bg-white transition-colors">
+                                    <span className="text-emerald-900">{action.icon}</span>
+                                </div>
+                                <span className="mt-2 text-xs text-gray-800 text-center">{action.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
                 {/* Exchange Rate */}
-                <section className="bg-white rounded-3xl p-5 shadow-md">
-                    <div className="flex items-center justify-between mb-5">
-                        <h3 className="font-bold text-base text-gray-900">Exchange Rate</h3>
-                        <div className="flex items-center gap-2 text-xs text-cyan-600">
-                            <span className="font-medium">Last updated: 01:38 AM</span>
-                            <button className="p-1.5 hover:bg-cyan-50 rounded-lg transition-colors">
+                <section className="bg-white rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-semibold text-base text-gray-900">Exchange Rate</h3>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-cyan-600">Last updated: 01:38 AM</span>
+                            <button className="p-1 hover:bg-cyan-50 rounded-lg transition-colors">
                                 <RefreshCw size={14} className="text-cyan-600" />
                             </button>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-4 py-3 flex-1 border border-gray-100">
-                            <span className="text-xl">🇪🇺</span>
-                            <select className="flex-1 bg-transparent outline-none text-sm font-semibold text-gray-800">
+                    
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-3 flex-1">
+                            <span className="text-lg">🇪🇺</span>
+                            <select className="flex-1 bg-transparent outline-none text-sm font-medium text-gray-900 cursor-pointer">
                                 <option>EUR</option>
                                 <option>USD</option>
                                 <option>GBP</option>
-                                <option>BTC</option>
                             </select>
                         </div>
-                        <div className="text-gray-900">
-                            <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
-                                <path d="M28 7H6l4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M4 17h22l-4 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        
+                        <div className="text-gray-400">
+                            <svg width="24" height="20" viewBox="0 0 24 20" fill="none">
+                                <path d="M20 5H4l3-3M4 15h16l-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                         </div>
-                        <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-4 py-3 flex-1 border border-gray-100">
-                            <span className="text-xl">🇳🇬</span>
-                            <select className="flex-1 bg-transparent outline-none text-sm font-semibold text-gray-800">
+                        
+                        <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-3 flex-1">
+                            <span className="text-lg">🇳🇬</span>
+                            <select className="flex-1 bg-transparent outline-none text-sm font-medium text-gray-900 cursor-pointer">
                                 <option>NGN</option>
                                 <option>GHS</option>
                                 <option>KES</option>
                             </select>
                         </div>
                     </div>
-                    <p className="text-sm text-gray-700 font-semibold mb-5">1.00 EUR = 1,667.649 NGN</p>
-                    <button className="w-full rounded-xl bg-white py-3.5 text-cyan-600 font-semibold text-sm hover:green-500 shadow-md transition-all border-4 border-cyan-500">
+                    
+                    <p className="text-sm text-gray-700 mb-5">1.00 EUR = 1,667.649 NGN</p>
+                    
+                    <button 
+                        onClick={() => router.push("/dashboard/convert")}
+                        className="w-full rounded-xl bg-white py-3.5 text-cyan-600 font-semibold text-sm hover:bg-cyan-50 shadow-sm transition-all border-2 border-cyan-500"
+                    >
                         Convert Currencies
                     </button>
                 </section>
 
                 {/* Transaction History */}
-                <section className="bg-white rounded-3xl p-5 shadow-md">
-                    <div className="flex items-center justify-between mb-5">
-                        <h3 className="font-bold text-base text-gray-900">Transaction History</h3>
+                <section className="bg-white rounded-3xl p-6 shadow-sm mt-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-semibold text-base text-gray-900">Transaction History</h3>
                         <button className="text-xs text-cyan-600 font-semibold hover:underline">View all</button>
                     </div>
 
                     {transactions.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-1">
                             {transactions.map((t) => (
-                                <div key={t.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                    <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                <div key={t.id} className="flex items-center gap-3 py-3">
+                                    <div className={`h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                         t.type === 'receive' ? 'bg-green-50' : 'bg-cyan-50'
                                     }`}>
                                         {t.type === 'receive' ? (
-                                            <ReceiveIcon size={22} className="text-green-600" strokeWidth={2.5} />
+                                            <ReceiveIcon size={20} className="text-green-600" strokeWidth={2.5} />
                                         ) : (
-                                            <SendIcon size={22} className="text-cyan-600" strokeWidth={2.5} />
+                                            <SendIcon size={20} className="text-cyan-600" strokeWidth={2.5} />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 truncate">{t.title}</p>
-                                        <p className="text-xs text-gray-500 mt-1">{t.time}</p>
+                                        <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{t.time}</p>
                                     </div>
                                     <div className="text-right flex-shrink-0">
-                                        <p className="text-sm font-bold text-gray-900">{t.amount}</p>
-                                        <span className="inline-block mt-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
+                                        <p className="text-sm font-semibold text-gray-900">{t.amount}</p>
+                                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-green-100 text-green-700">
                                             {t.status}
                                         </span>
                                     </div>

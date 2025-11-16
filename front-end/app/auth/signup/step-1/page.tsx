@@ -2,11 +2,36 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import SignupProgress from "@/components/SignupProgress";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Step1() {
+  const router = useRouter();
+  const { setUser } = useUser();
   const [email, setEmail] = useState("");
   const [sliqId, setSliqId] = useState("");
+
+  // Validation: email must be valid and sliqId must have at least 3 characters
+  const isValidEmail = email.includes("@") && email.includes(".");
+  const isValidSliqId = sliqId.length >= 3;
+  const isFormValid = isValidEmail && isValidSliqId;
+
+  const handleContinue = () => {
+    if (!isFormValid) return;
+    
+    // Save user data to context (will be persisted to localStorage)
+    const fullSliqId = `@${sliqId}.sliq.eth`;
+    setUser({
+      sliqId: fullSliqId,
+      email,
+      name: "", // Will be filled in later steps
+      initials: "", // Will be filled in later steps
+    });
+
+    // Navigate to next step
+    router.push("/auth/signup/step-2");
+  };
 
   return (
     <div className="min-h-screen bg-[#f7fbff] relative p-6">
@@ -27,20 +52,75 @@ export default function Step1() {
 
         <div className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm text-gray-700 mb-2">Email</label>
-            <input value={email} onChange={(e)=>setEmail(e.target.value)} type="email" placeholder="Oluwabunmi@sampleemail.com" className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 outline-none" />
+            <label className="block text-sm text-gray-700 mb-2">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input 
+              value={email} 
+              onChange={(e)=>setEmail(e.target.value)} 
+              type="email" 
+              placeholder="example@email.com" 
+              className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-cyan-500" 
+              required
+            />
           </div>
           <div>
-            <label className="block text-sm text-gray-700 mb-2">Create Sliq ID</label>
+            <label className="block text-sm text-gray-700 mb-2">
+              Create Sliq ID <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <input value={sliqId} onChange={(e)=>setSliqId(e.target.value)} type="text" placeholder="@ Olubumix" className="w-full rounded-xl bg-gray-100 border border-gray-200 px-10 py-3 outline-none" />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">@</span>
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✔</span>
+              <input 
+                value={sliqId} 
+                onChange={(e)=>{
+                  // Remove any special characters except alphanumeric, underscore, hyphen
+                  const cleaned = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '');
+                  setSliqId(cleaned.toLowerCase());
+                }} 
+                type="text" 
+                placeholder="username" 
+                className="w-full rounded-xl bg-gray-100 border border-gray-200 pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-cyan-500" 
+                required
+                minLength={3}
+              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">@</span>
+              {sliqId && isValidSliqId && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">✔</span>
+              )}
             </div>
+            {sliqId && (
+              <p className={`mt-1.5 text-xs ${isValidSliqId ? 'text-gray-600' : 'text-red-500'}`}>
+                {isValidSliqId ? (
+                  <>
+                    Your Sliq ID: <span className="font-semibold text-cyan-700">@{sliqId}.sliq.eth</span>
+                  </>
+                ) : (
+                  'Sliq ID must be at least 3 characters'
+                )}
+              </p>
+            )}
+            {!sliqId && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                Min. 3 characters (letters, numbers, - and _ only)
+              </p>
+            )}
           </div>
         </div>
 
-        <Link href="/auth/signup/step-2" className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-700">Continue</Link>
+        {isFormValid ? (
+          <button
+            onClick={handleContinue}
+            className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-700 transition-colors"
+          >
+            Continue
+          </button>
+        ) : (
+          <button 
+            disabled
+            className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-gray-300 px-4 py-3 font-medium text-gray-500 cursor-not-allowed"
+          >
+            Continue
+          </button>
+        )}
 
         <p className="mt-6 text-center text-sm text-gray-600">Already have an account? <Link className="text-blue-600" href="/auth/login">Login</Link></p>
       </div>
