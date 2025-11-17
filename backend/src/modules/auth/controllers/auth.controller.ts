@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { login, signup, publicUser, Repo } from '../services/auth.service.js';
+import { publicUser, Repo } from '../services/auth.service.js';
 import { env } from '../../../config/env.js';
 import { AuthenticatedRequest } from '../../../common/middleware/auth.js';
 import { createSession, setSessionCookie, clearSessionCookie, destroySession } from '../../../common/session/sessionStore.js';
@@ -8,36 +8,7 @@ import { createResetToken, consumeResetToken } from '../services/resetToken.serv
 import { UserRepositoryPrisma } from '../../users/repositories/user.prisma.repository.js';
 import bcrypt from 'bcryptjs';
 
-export const handleSignup = async (req: Request, res: Response) => {
-  const { fname, lname, email, password, phone, refCode } = (req as any).body;
-  const { user, token } = await signup(fname, lname, email, password, phone, refCode);
-  const sess = await createSession({ userId: user.id });
-  setSessionCookie(res, sess.id);
-  res.cookie('accessToken', token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: env.NODE_ENV === 'production',
-    maxAge: 15 * 60 * 1000
-  }).status(201).json({ user });
-};
-
-export const handleLogin = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = (req as any).body;
-    const { user, token } = await login(email, password);
-    const sess = await createSession({ userId: user.id });
-    setSessionCookie(res, sess.id);
-    res.cookie('accessToken', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000
-    }).json({ user });
-  } catch (error: any) {
-    const statusCode = error.status || 400;
-    res.status(statusCode).json({ error: { message: error.message } });
-  }
-};
+// Signup and login handlers removed - authentication logic disabled
 
 export const handleLogout = async (req: Request, res: Response) => {
   try {

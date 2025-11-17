@@ -33,44 +33,11 @@ export default function Step5() {
     setIsLoading(true);
 
     try {
-      // Get data from user context
-      if (!user?.email || !user?.name) {
-        throw new Error("Missing user data. Please start from step 1.");
-      }
-
-      // Split name into first and last name
-      const nameParts = user.name.split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-
-      // Call backend signup API
-      const response = await fetch("http://localhost:4000/api/v1/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fname: firstName,
-          lname: lastName,
-          email: user.email,
-          password: pw,
-          // Phone is optional - don't send it if not collected
-          // TODO: Add phone collection in signup flow
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Signup failed");
-      }
-
-      const data = await response.json();
+      // Authentication logic removed - just navigate to next step
+      // In a real implementation, this would call the backend API
       
-      // Update user context with userId from backend
-      updateUser({ userId: data.user.id });
-
-      // Store token
-      localStorage.setItem("sliqpay_token", data.token);
+      // Simulate a brief delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Navigate to connect wallet
       router.push("/auth/signup/connect-wallet");

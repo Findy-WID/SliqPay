@@ -151,35 +151,33 @@ export default function Form({ formtype }: FormProp) {
               payload = { email: parsed.data.email };
             }
 
-            const endpoint = formtype === 'signup' ? '/auth/signup' : formtype === 'login' ? '/auth/login' : '/auth/forgotpassword';
-            const response = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
-          
+            // Authentication API calls removed - authentication logic disabled
             
-            // success
+            // For forgot password, still call the API (password reset is kept)
             if (formtype === 'forgot') {
+              const endpoint = '/auth/forgotpassword';
+              const response = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
               setSuccessMsg('If the email exists, a reset link has been sent. Please check your inbox.');
               return;
             }
             
+            // For signup and login, just redirect without API call
             // Reset form
             setFormInfos({ fname: "", lname: "", email: "", phone: "", password: "", cPassword: "", refCode: "" });
             
             // Set success message
             setSuccessMsg(formtype === 'signup' ? 'Account created! Redirecting to dashboard...' : 'Login successful! Redirecting to dashboard...');
             
-          
-            
-            // Use a safer approach that doesn't trigger CSP issues
-            // Immediately try router push first
-                        try {
-                            router.push('/dashboard');
-                        } catch (error: unknown) {
-                            console.error("Error with router.push:", error);
-                            const redirectToPath = () => {
-                                window.location.href = '/dashboard';
-                            };
-                            setTimeout(redirectToPath, 1000);
-                        }
+            // Redirect to dashboard
+            try {
+              router.push('/dashboard');
+            } catch (error: unknown) {
+              console.error("Error with router.push:", error);
+              const redirectToPath = () => {
+                window.location.href = '/dashboard';
+              };
+              setTimeout(redirectToPath, 1000);
+            }
         } catch (err: any) {
             const message = err.message || 'Something went wrong';
             toast({
