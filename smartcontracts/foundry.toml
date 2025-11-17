@@ -49,3 +49,7 @@ depth = 15
 fail_on_revert = false
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[profile.deploy]
+# Ensure no forking configuration is inherited or applied for this deployment profile
+fork-url = ""
