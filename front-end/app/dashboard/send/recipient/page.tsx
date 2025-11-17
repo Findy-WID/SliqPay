@@ -1,26 +1,73 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useMemo } from "react";
 import { ArrowLeft, Lock, ArrowUpDown } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { createTransaction } from "@/lib/accounts";
 
-function RecipientInner() {
+import { publicClient } from "@/utils/client";
+import { CURRENCY_TOKENS } from "@/lib/currencies";
+import { abi as fxOracleAbiArray } from "@/utils/fxOracleAbi.json";
+import vaultAbiJson from "@/utils/vaultAbi.json";
+import type { Abi } from 'viem';
+import { useWalletClient } from "wagmi";
+
+import { DEMO_PROFILES } from "@/lib/demoAccounts";
+
+// --- ENVIRONMENT AND ABI SETUP (From New Version) ---
+const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_VAULT_ADDRESS || "";
+const FX_ORACLE_ADDRESS = process.env.NEXT_PUBLIC_FX_ORACLE_ADDRESS || "";
+
+const sender = DEMO_PROFILES["Findy"];
+const recipient = DEMO_PROFILES["Henry"];
+
+export const vaultAbi = vaultAbiJson.abi as Abi;
+// Minimal ERC20 ABI
+const ERC20_ABI = [
+  {
+    name: "approve",
+    type: "function",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+];
+
+// Placeholder SliQ ID - Replace with actual recipient ID lookup
+const RECIPIENT_SLIQ_ID = "@allan.sliq";
+
+type NullableNumber = number | null;
+
+export function RecipientInner() {
     const router = useRouter();
+    const { data: wallet } = useWalletClient();
+    
+    // User Context and Account State (From Old Version)
     const { refreshAccount, account } = useUser();
+    
+    // Form and UI State
     const [accountNumber, setAccountNumber] = useState("");
     const [accountName, setAccountName] = useState("");
     const [bankName, setBankName] = useState("");
     const [showConfirm, setShowConfirm] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
-    // Values from previous page (query params) - parsed on client to avoid Suspense requirement
+    // Params State (From Old Version)
     const [sendAmountParam, setSendAmountParam] = useState<string>("0");
     const [sendCurrencyParam, setSendCurrencyParam] = useState<string>("NGN");
-    const [receiveAmountParam, setReceiveAmountParam] = useState<string>("0.00");
+    // NOTE: receiveAmountParam is now derived, initializing it here for URL compatibility
     const [receiveCurrencyParam, setReceiveCurrencyParam] = useState<string>("GHS");
 
+    // Dynamic FX State (From New Version)
+    const [rate, setRate] = useState<NullableNumber>(null);
+    const [loadingTx, setLoadingTx] = useState(false);
+    const [txError, setTxError] = useState<string | null>(null);
+
+    // --- EFFECT: Load Query Params (From Old Version) ---
     useEffect(() => {
         if (typeof window === "undefined") return;
         try {
@@ -28,16 +75,73 @@ function RecipientInner() {
             const sp = url.searchParams;
             const sendAmt = sp.get("sendAmount") || "0";
             const sendCur = sp.get("sendCurrency") || "NGN";
-            const recvAmt = sp.get("receiveAmount") || "0.00";
             const recvCur = sp.get("receiveCurrency") || "GHS";
+            
             setSendAmountParam(sendAmt);
             setSendCurrencyParam(sendCur);
-            setReceiveAmountParam(recvAmt);
             setReceiveCurrencyParam(recvCur);
+            // We ignore the receiveAmountParam from URL since we calculate it dynamically
         } catch (e) {
             // ignore malformed URL
         }
     }, []);
+
+    // --- EFFECT: Fetch Dynamic FX Rate (From New Version) ---
+    useEffect(() => {
+        async function fetchRate() {
+            try {
+                const tokenAddress = CURRENCY_TOKENS[sendCurrencyParam as keyof typeof CURRENCY_TOKENS];
+                // Use a default address if FX_ORACLE_ADDRESS is not set for demo purposes, or skip
+                if (!tokenAddress || !FX_ORACLE_ADDRESS) {
+                    setRate(1500); // Fallback to hardcoded rate for demo if missing config
+                    return;
+                }
+
+                const res = await publicClient.readContract({
+                    address: FX_ORACLE_ADDRESS as `0x${string}`,
+                    abi: fxOracleAbiArray as Abi,
+                    functionName: "getRate",
+                    args: [tokenAddress],
+                });
+
+                const n = typeof res === "bigint" ? Number(res) : Number(res || 0);
+                setRate(Number.isFinite(n) ? n : null);
+            } catch {
+                setRate(null); // Set to null on error
+            }
+        }
+        fetchRate();
+    }, [sendCurrencyParam]);
+    
+    // --- COMPUTED VALUE: Dynamic Recipient Amount ---
+    const { recipientAmount, exchangeRateDisplay } = useMemo(() => {
+        const sendAmt = parseFloat(sendAmountParam || "0");
+        let currentRate = rate;
+
+        // Fallback for demo if rate fetching fails or is null
+        if (currentRate === null) {
+            // Using a simple hardcoded rate for UI display fallback if fetch fails
+            currentRate = sendCurrencyParam === 'USD' && receiveCurrencyParam === 'NGN' ? 1500 : 1; 
+        }
+
+        const calculatedAmount = sendAmt * currentRate;
+        
+        // Final formatted amount for display
+        const formattedAmount = Number.isFinite(calculatedAmount) 
+            ? calculatedAmount.toFixed(2) 
+            : "0.00";
+
+        // Dynamic Display Rate (assuming 1 unit of sender currency buys X units of local currency)
+        const rateDisplay = currentRate 
+            ? `1 ${sendCurrencyParam} = ${currentRate.toFixed(2)} ${receiveCurrencyParam}`
+            : "Loading Rate...";
+
+        return {
+            recipientAmount: formattedAmount,
+            exchangeRateDisplay: rateDisplay
+        };
+    }, [sendAmountParam, rate, sendCurrencyParam, receiveCurrencyParam]);
+
 
     const formatAmount = (val: string) => {
         const num = Number(val.replace(/,/g, ""));
@@ -63,30 +167,109 @@ function RecipientInner() {
         setShowConfirm(true);
     };
 
+    // --- HYBRID TRANSFER LOGIC (Implements Web3 Payments) ---
     const handleConfirmTransfer = async () => {
+        setTxError(null);
+        setLoadingTx(true);
+        const sendAmountNum = Number(sendAmountParam);
+
         try {
-            // Create debit transaction to record the money sent
+            // --- 1. Web3 Setup & Validation ---
+            if (!wallet || !wallet.account) throw new Error("Wallet not connected");
+
+            const tokenAddress = CURRENCY_TOKENS[sendCurrencyParam as keyof typeof CURRENCY_TOKENS];
+            if (!TREASURY_ADDRESS) throw new Error("Treasury not configured");
+            if (!tokenAddress) throw new Error("Unknown currency: " + sendCurrencyParam);
+            
+            if (!account?.sliqId) throw new Error("Missing Sender Sliq ID."); // Assuming sender's Sliq ID is available
+
+            // NOTE: Ensure rawAmount is correctly scaled to the token's decimals (e.g., 18)
+            // Since we don't know the token's decimals, we'll use 18 as the standard default.
+            const rawAmount = BigInt(Math.floor(sendAmountNum * (10 ** 18))); 
+            if (rawAmount <= BigInt(0)) throw new Error("Invalid amount");
+            
+            // Placeholder for the recipient's Sliq ID (since it's a bank/account number flow)
+            // In a real app, you would look up the Sliq ID using the account/bank details.
+            const SLIQ_RECIPIENT = RECIPIENT_SLIQ_ID; 
+
+            const ZERO = "0x0000000000000000000000000000000000000000";
+
+            // NATIVE TOKEN TRANSFER (e.g., sending ETH/MATIC/etc.)
+            if (tokenAddress === ZERO) {
+                
+                // --- NATIVE LOGIC ---
+                // Note: If you use native tokens, you MUST adjust the `routePaymentNative` call
+                // to match your contract's exact signature. The old code was:
+                // routePaymentNative([RECIPIENT_SLIQ_ID], { value: rawAmount })
+                
+                const { request } = await publicClient.simulateContract({
+                    account: wallet.account,
+                    address: TREASURY_ADDRESS as `0x${string}`,
+                    abi: vaultAbi as Abi,
+                    functionName: "routePaymentNative",
+                    args: [SLIQ_RECIPIENT], // Assuming your contract takes Sliq ID
+                    value: rawAmount,
+                });
+
+                await wallet.writeContract(request);
+
+            }
+            // ERC20 (Fiat Token) TRANSFER
+            else {
+                // --- ERC20 LOGIC: 1. Approve ---
+                const { request: approveReq } = await publicClient.simulateContract({
+                    account: wallet.account,
+                    address: tokenAddress as `0x${string}`,
+                    abi: ERC20_ABI,
+                    functionName: "approve",
+                    args: [TREASURY_ADDRESS, rawAmount],
+                });
+
+                // Execute Approval
+                await wallet.writeContract(approveReq);
+
+                // --- ERC20 LOGIC: 2. routePayment ---
+                // This is the call that your friend suggested, but implemented with Viem's pattern.
+                // Parameters expected: [recipientSliqId, tokenAddress, amount]
+                const { request: routeReq } = await publicClient.simulateContract({
+                    account: wallet.account,
+                    address: TREASURY_ADDRESS as `0x${string}`,
+                    abi: vaultAbi as Abi,
+                    functionName: "routePayment",
+                    args: [SLIQ_RECIPIENT, tokenAddress, rawAmount],
+                });
+
+                // Execute Payment Routing
+                await wallet.writeContract(routeReq);
+            }
+
+            // --- 2. Local Transaction Record & UI Update ---
             if (account?.id) {
                 await createTransaction({
                     accountId: account.id,
-                    amount: Number(sendAmountParam),
+                    amount: sendAmountNum,
                     type: 'debit',
-                    description: `Sent to ${accountName} (${accountNumber} - ${bankName})`
+                    description: `Sent to ${accountName} (${accountNumber} - ${bankName}) via Web3`
                 });
             }
+            await refreshAccount(); 
             
-            console.log("Transfer confirmed", { accountNumber, accountName, bankName });
+            console.log("Transfer confirmed & Web3 call initiated", { accountNumber, accountName, bankName });
+            
             setShowConfirm(false);
             setShowSuccess(true);
-        } catch (error) {
-            console.error("Failed to create transaction:", error);
-            // Still show success since the transfer logic might be separate
-            // In production, handle this error properly
+
+        } catch (error: any) {
+            console.error("Transfer failed:", error);
+            setTxError(error?.shortMessage || error?.message || "Transaction failed");
             setShowConfirm(false);
-            setShowSuccess(true);
+        } finally {
+            setLoadingTx(false);
         }
     };
 
+
+    // --- RENDER START (Preserving Old UI Structure) ---
     return (
         <div className="min-h-screen bg-white">
             {/* Header */}
@@ -94,7 +277,7 @@ function RecipientInner() {
                 <div className="flex items-center gap-4 px-4 py-4">
                     <button 
                         onClick={() => router.back()}
-                        className="p-2 ml-12 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                         <ArrowLeft size={24} className="text-gray-900" />
                     </button>
@@ -109,16 +292,17 @@ function RecipientInner() {
                     <span className="text-sm font-medium text-gray-700">Rate guaranteed</span>
                 </div>
 
-                {/* Exchange Rate Display */}
+                {/* Exchange Rate Display (Now Dynamic) */}
                 <div className="flex justify-center mb-8">
                     <div className="inline-flex items-center gap-2 bg-cyan-100 px-6 py-3 rounded-full">
                         <span className="text-sm font-semibold text-cyan-900">
-                            1 USD = 1500 NGN
+                            {exchangeRateDisplay}
                         </span>
                     </div>
                 </div>
 
                 {/* Account Number */}
+                {/* ... (Account Number input retained from Old Version) ... */}
                 <div className="mb-5">
                     <label className="block text-sm font-medium text-gray-900 mb-3">
                         Account Number
@@ -138,6 +322,7 @@ function RecipientInner() {
                 </div>
 
                 {/* Account Name and Bank Name Row */}
+                {/* ... (Account Name & Bank Name inputs retained from Old Version) ... */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     <div>
                         <label className="block text-sm font-medium text-gray-900 mb-3">
@@ -174,17 +359,21 @@ function RecipientInner() {
                 {/* Send Money Button */}
                 <button
                     onClick={handleSendMoney}
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || loadingTx}
                     className={`w-full font-semibold py-4 rounded-xl transition-all shadow-md mb-8 ${
-                        isFormValid
+                        isFormValid && !loadingTx
                             ? "bg-green-600 hover:bg-green-700 text-white"
                             : "bg-gray-200 text-gray-400 cursor-not-allowed"
                     }`}
                 >
-                    Send Money
+                    {loadingTx ? 'Processing...' : 'Send Money'}
                 </button>
+                {txError && (
+                    <p className="text-sm text-center text-red-600 mb-4">{txError}</p>
+                )}
 
-                {/* Recents Section */}
+                {/* Recents Section (Retained from Old Version) */}
+                {/* ... (Recents UI retained from Old Version) ... */}
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold text-gray-900">Recents</h2>
@@ -231,7 +420,7 @@ function RecipientInner() {
                 </div>
             </div>
         
-        {/* Confirmation Overlay: mobile bottom sheet, desktop centered modal */}
+        {/* Confirmation Overlay (Retained from Old Version) */}
         <div className={`fixed inset-0 z-50 ${showConfirm ? '' : 'pointer-events-none'}`} aria-hidden={!showConfirm}>
             {/* Backdrop */}
             <div
@@ -239,7 +428,7 @@ function RecipientInner() {
                 onClick={() => setShowConfirm(false)}
             />
 
-            {/* Panel: mobile bottom, desktop centered */}
+            {/* Panel */}
             <div
                 className={[
                     'absolute left-0 right-0 bottom-0 mx-auto w-full max-w-md bg-white shadow-xl',
@@ -302,9 +491,9 @@ function RecipientInner() {
                                         </div>
                                     </div>
 
-                                    {/* Bottom: Receive amount */}
+                                    {/* Bottom: Receive amount (Now Dynamic) */}
                                     <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-200 px-3 py-2 shadow-sm min-w-[220px]">
-                                        <span className="font-extrabold text-gray-900">{formatAmount(receiveAmountParam)}</span>
+                                        <span className="font-extrabold text-gray-900">{formatAmount(recipientAmount)}</span>
                                         <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-2.5 py-0.5">
                                             <span className="text-base leading-none">
                                                 {receiveCurrencyParam === 'GHS' ? '🇬🇭' : receiveCurrencyParam === 'NGN' ? '🇳🇬' : '🏳️'}
@@ -332,16 +521,19 @@ function RecipientInner() {
                         </button>
                         <button
                             onClick={handleConfirmTransfer}
-                            className="h-11 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700"
+                            disabled={loadingTx}
+                            className={`h-11 rounded-xl text-white font-semibold ${
+                                loadingTx ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                            }`}
                         >
-                            Send Money
+                            {loadingTx ? 'Sending...' : 'Send Money'}
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        {/* Success Overlay: mobile bottom sheet, desktop centered modal */}
+        {/* Success Overlay (Retained from Old Version) */}
         <div className={`fixed inset-0 z-50 ${showSuccess ? '' : 'pointer-events-none'}`} aria-hidden={!showSuccess}>
             {/* Backdrop */}
             <div

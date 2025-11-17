@@ -9,7 +9,12 @@ import { publicClient } from "@/utils/client";
 import { CURRENCY_TOKENS } from "@/lib/currencies";
 import fxOracleAbi from "@/utils/fxOracleAbi.json";
 
+import { DEMO_PROFILES } from "@/lib/demoAccounts";
+
 type NullableNumber = number | null;
+
+
+const sender = DEMO_PROFILES["Findy"];
 
 export default function SendMoneyPage() {
   const router = useRouter();
