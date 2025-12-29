@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import SignupProgress from "@/components/SignupProgress";
 import { useUser } from "@/contexts/UserContext";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Step5() {
   const router = useRouter();
@@ -104,7 +105,15 @@ export default function Step5() {
             <label className="block text-sm text-gray-700 mb-2">Password</label>
             <div className="relative">
               <input value={pw} onChange={(e)=>setPw(e.target.value)} type={show1? 'text': 'password'} placeholder="****************" className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 pr-10 outline-none" />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" onClick={()=>setShow1(v=>!v)}>👁️</button>
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                onClick={()=>setShow1(v=>!v)}
+                tabIndex={-1}
+                aria-label={show1 ? "Hide password" : "Show password"}
+              >
+                {show1 ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
             <ul className="mt-3 space-y-1 text-sm text-gray-600">
               {criteria.map((c)=> (
@@ -119,7 +128,15 @@ export default function Step5() {
             <label className="block text-sm text-gray-700 mb-2">Confirm Password</label>
             <div className="relative">
               <input value={cpw} onChange={(e)=>setCPw(e.target.value)} type={show2? 'text': 'password'} placeholder="****************" className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 pr-10 outline-none" />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" onClick={()=>setShow2(v=>!v)}>👁️</button>
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                onClick={()=>setShow2(v=>!v)}
+                tabIndex={-1}
+                aria-label={show2 ? "Hide password" : "Show password"}
+              >
+                {show2 ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </div>
         </div>
