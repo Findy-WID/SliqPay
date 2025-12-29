@@ -2,6 +2,9 @@
   "name": "sliqpay",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "front-end"
+  ],
   
   "scripts": {
     "dev": "npm run dev ",
