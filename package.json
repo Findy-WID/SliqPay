@@ -7,14 +7,14 @@
     "dev": "npm run dev ",
     
     
-    "build": "npm run build ",
+    "build": "npm run build -w front-end ",
     
     
     "start": "npm run start ",
     
    
-    "lint": "npm run lint -w front-end && npm run lint -w backend",
-    "typecheck": "npm run typecheck -w front-end && npm run typecheck -w backend"
+    "lint": "npm run lint ",
+    "typecheck": "npm run typecheck "
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
