@@ -2,10 +2,7 @@
   "name": "sliqpay",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "front-end",
-    "backend"
-  ],
+  
   "scripts": {
     "dev:fe": "npm run dev -w front-end",
     "dev:be": "npm run dev -w backend",
