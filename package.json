@@ -4,15 +4,15 @@
   "private": true,
   
   "scripts": {
-    "dev:fe": "npm run dev -w front-end",
-    "dev:be": "npm run dev -w backend",
-    "dev": "concurrently \"npm:dev:fe\" \"npm:dev:be\"",
-    "build:fe": "npm run build -w front-end",
-    "build:be": "npm run build -w backend",
-    "build": "npm run build:fe && npm run build:be",
-    "start:fe": "npm run start -w front-end",
-    "start:be": "npm run start -w backend",
-    "start": "concurrently \"npm:start:fe\" \"npm:start:be\"",
+    "dev": "npm run dev ",
+    
+    
+    "build": "npm run build ",
+    
+    
+    "start": "npm run start ",
+    
+   
     "lint": "npm run lint -w front-end && npm run lint -w backend",
     "typecheck": "npm run typecheck -w front-end && npm run typecheck -w backend"
   },
@@ -36,7 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "concurrently": "^9.2.1",
+    
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4.1.11",
