@@ -8,12 +8,12 @@ const DISABLE_AUTH_GUARD = true;
 const protectedPrefixes = ['/dashboard'];
 // API routes that would require auth (kept for future use)
 const protectedApiRoutes = ['/api/v1/accounts', '/api/v1/transactions'];
-// Auth pages that redirect to dashboard if already logged in
-const authPages = ['/auth/login', '/auth/signup'];
-// Auth pages that are always accessible
-const publicAuthPages = ['/auth/forgotpassword', '/auth/resetpassword'];
-// Public API routes
-const publicApiRoutes = ['/api/v1/auth/login', '/api/v1/auth/signup', '/api/v1/auth/forgotpassword', '/api/v1/auth/resetpassword'];
+// Auth pages that redirect to dashboard if already logged in (login/signup removed)
+const authPages: string[] = [];
+// Auth pages that are always accessible (login/signup now public, password reset kept)
+const publicAuthPages = ['/auth/forgotpassword', '/auth/resetpassword', '/auth/login', '/auth/signup'];
+// Public API routes (login/signup removed from backend)
+const publicApiRoutes = ['/api/v1/auth/forgotpassword', '/api/v1/auth/resetpassword'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

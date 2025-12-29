@@ -33,44 +33,44 @@ export default function Step5() {
     setIsLoading(true);
 
     try {
-      // Get data from user context
-      if (!user?.email || !user?.name) {
-        throw new Error("Missing user data. Please start from step 1.");
-      }
-
-      // Split name into first and last name
-      const nameParts = user.name.split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
+      // Get user data from context (collected in previous steps)
+      // Generate unique phone number using timestamp to avoid duplicate constraint
+      const uniquePhone = `+234${Date.now().toString().slice(-10)}`;
+      const signupData = {
+        fname: user?.name?.split(' ')[0] || 'User',
+        lname: user?.name?.split(' ').slice(1).join(' ') || 'Account',
+        email: user?.email || '',
+        password: pw,
+        phone: uniquePhone,
+        refCode: undefined
+      };
 
       // Call backend signup API
-      const response = await fetch("http://localhost:4000/api/v1/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fname: firstName,
-          lname: lastName,
-          email: user.email,
-          password: pw,
-          // Phone is optional - don't send it if not collected
-          // TODO: Add phone collection in signup flow
-        }),
-      });
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api/v1', '') + '/api/v1/auth/signup' || 'http://localhost:4000/api/v1/auth/signup',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(signupData)
+        }
+      );
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Signup failed");
+        const errorData = await response.json().catch(() => ({ error: 'Signup failed' }));
+        throw new Error(errorData.error || 'Failed to create account');
       }
 
       const data = await response.json();
-      
-      // Update user context with userId from backend
-      updateUser({ userId: data.user.id });
+      console.log('Signup successful:', data);
 
-      // Store token
-      localStorage.setItem("sliqpay_token", data.token);
+      // Update user context with server response if needed
+      if (data.user) {
+        updateUser({
+          name: `${data.user.firstName} ${data.user.lastName}`,
+          email: data.user.email
+        });
+      }
 
       // Navigate to connect wallet
       router.push("/auth/signup/connect-wallet");
