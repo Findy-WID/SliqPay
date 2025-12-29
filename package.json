@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "backend",
-    "front-end"
+    "front-end",
+    "backend"
   ],
   "scripts": {
     "dev:fe": "npm run dev -w front-end",
