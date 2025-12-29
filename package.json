@@ -5,17 +5,10 @@
   "workspaces": [
     "front-end"
   ],
-  
   "scripts": {
     "dev": "npm run dev ",
-    
-    
     "build": "npm run build -w front-end ",
-    
-    
     "start": "npm run start ",
-    
-   
     "lint": "npm run lint ",
     "typecheck": "npm run typecheck "
   },
@@ -26,7 +19,7 @@
     "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/vite": "^4.1.11",
     "lucia": "^3.2.2",
-    "next": "15.3.4",
+    "next": "15.3.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.62.0",
@@ -39,7 +32,6 @@
     "@types/node": "^20",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4.1.11",
