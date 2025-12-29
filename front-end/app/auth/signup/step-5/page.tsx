@@ -33,11 +33,44 @@ export default function Step5() {
     setIsLoading(true);
 
     try {
-      // Authentication logic removed - just navigate to next step
-      // In a real implementation, this would call the backend API
-      
-      // Simulate a brief delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Get user data from context (collected in previous steps)
+      // Generate unique phone number using timestamp to avoid duplicate constraint
+      const uniquePhone = `+234${Date.now().toString().slice(-10)}`;
+      const signupData = {
+        fname: user?.name?.split(' ')[0] || 'User',
+        lname: user?.name?.split(' ').slice(1).join(' ') || 'Account',
+        email: user?.email || '',
+        password: pw,
+        phone: uniquePhone,
+        refCode: undefined
+      };
+
+      // Call backend signup API
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api/v1', '') + '/api/v1/auth/signup' || 'http://localhost:4000/api/v1/auth/signup',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(signupData)
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Signup failed' }));
+        throw new Error(errorData.error || 'Failed to create account');
+      }
+
+      const data = await response.json();
+      console.log('Signup successful:', data);
+
+      // Update user context with server response if needed
+      if (data.user) {
+        updateUser({
+          name: `${data.user.firstName} ${data.user.lastName}`,
+          email: data.user.email
+        });
+      }
 
       // Navigate to connect wallet
       router.push("/auth/signup/connect-wallet");

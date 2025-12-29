@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { getTransactionsByAccount, Transaction } from "@/lib/accounts";
+import { useBalances, useTransactions, useCurrentUser } from "@/lib/api-hooks";
 
 // Skeleton component for loading state
 function DashboardSkeleton() {
@@ -92,12 +93,19 @@ export default function DashboardHome() {
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [accountsOpen, setAccountsOpen] = useState(false);
+
+    // Web2 API Hooks
+    const { data: web2Balances, isLoading: loadingWeb2Balances } = useBalances();
+    const { data: web2Transactions, isLoading: loadingWeb2Transactions } = useTransactions(3);
+    const { data: currentUser } = useCurrentUser();
+
+    // Legacy Web3 transactions
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loadingTransactions, setLoadingTransactions] = useState(false);
 
     const wallet = "0x4A8C...E52B";
 
-    // Fetch transactions
+    // Fetch legacy transactions
     const fetchTransactions = async () => {
         if (!account?.id) return;
         
@@ -302,7 +310,12 @@ export default function DashboardHome() {
                             +
                         </button>
                         <h1 className="text-5xl font-bold text-green-600">
-                            {showBalance ? `₦${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "•••••••"}
+                            {showBalance ? (
+                                loadingWeb2Balances ? "..." : 
+                                web2Balances ? 
+                                `₦${web2Balances.find((b: any) => b.currency === currency)?.amount.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "0.00"}` 
+                                : `₦${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                            ) : "•••••••"}
                         </h1>
                         <button 
                             className="p-3 hover:bg-white/50 rounded-lg transition-colors"
@@ -311,6 +324,26 @@ export default function DashboardHome() {
                             {showBalance ? <Eye size={22} className="text-gray-600" /> : <EyeOff size={22} className="text-gray-600" />}
                         </button>
                     </div>
+                    
+                    {/* Currency Cards */}
+                    {web2Balances && web2Balances.length > 0 && (
+                        <div className="grid grid-cols-5 gap-2 mb-6">
+                            {web2Balances.map((bal: any) => (
+                                <button
+                                    key={bal.currency}
+                                    onClick={() => setCurrency(bal.currency)}
+                                    className={`rounded-2xl py-3 px-2 flex flex-col items-center justify-center transition-all ${
+                                        currency === bal.currency 
+                                        ? 'bg-gradient-to-br from-cyan-500 to-teal-600 text-white shadow-lg scale-105' 
+                                        : 'bg-white/70 border border-cyan-100 text-gray-700 hover:bg-white'
+                                    }`}
+                                >
+                                    <span className="text-lg mb-1">{currencyFlag(bal.currency)}</span>
+                                    <span className="text-xs font-medium">{bal.currency}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="flex justify-center mb-8">
                         <div className="inline-block rounded-full bg-cyan-100 px-4 py-2">
@@ -387,10 +420,92 @@ export default function DashboardHome() {
                 <section className="bg-white rounded-3xl p-6 shadow-sm mt-6">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-semibold text-base text-gray-900">Transaction History</h3>
-                        <button className="text-xs text-cyan-600 font-semibold hover:underline">View all</button>
+                        <button 
+                            onClick={() => router.push("/dashboard/history")}
+                            className="text-xs text-cyan-600 font-semibold hover:underline"
+                        >
+                            View all
+                        </button>
                     </div>
 
-                    {transactions.length > 0 ? (
+                    {loadingWeb2Transactions ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
+                                    <div className="h-11 w-11 rounded-full bg-gray-200 flex-shrink-0"></div>
+                                    <div className="flex-1">
+                                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                                    </div>
+                                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : web2Transactions && web2Transactions.length > 0 ? (
+                        <div className="space-y-1">
+                            {web2Transactions.map((tx: any) => {
+                                const isSender = currentUser && tx.from_user_id === currentUser.id;
+                                const isReceiver = currentUser && tx.to_user_id === currentUser.id;
+                                const txType = tx.type.toLowerCase();
+                                
+                                return (
+                                    <div key={tx.id} className="flex items-center gap-3 py-3">
+                                        <div className={`h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                            txType === 'send' && isReceiver ? 'bg-green-50' : 
+                                            txType === 'send' && isSender ? 'bg-cyan-50' :
+                                            txType === 'convert' ? 'bg-purple-50' :
+                                            txType === 'purchase' ? 'bg-orange-50' :
+                                            'bg-gray-50'
+                                        }`}>
+                                            {txType === 'send' && isReceiver ? (
+                                                <ArrowDownLeft size={20} className="text-green-600" strokeWidth={2.5} />
+                                            ) : txType === 'send' && isSender ? (
+                                                <ArrowUpRight size={20} className="text-cyan-600" strokeWidth={2.5} />
+                                            ) : txType === 'convert' ? (
+                                                <Repeat size={20} className="text-purple-600" strokeWidth={2.5} />
+                                            ) : (
+                                                <Receipt size={20} className="text-orange-600" strokeWidth={2.5} />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                {txType === 'send' && isSender && tx.to_user 
+                                                    ? `Sent to ${tx.to_user.first_name} ${tx.to_user.last_name}`
+                                                    : txType === 'send' && isReceiver && tx.from_user
+                                                    ? `Received from ${tx.from_user.first_name} ${tx.from_user.last_name}`
+                                                    : txType === 'convert'
+                                                    ? `Convert ${tx.from_currency} → ${tx.to_currency}`
+                                                    : txType === 'purchase'
+                                                    ? `Bill Payment`
+                                                    : tx.type}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {new Date(tx.created_at).toLocaleDateString('en-US', { 
+                                                    month: 'short', 
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </p>
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                            <p className="text-sm font-semibold text-gray-900">
+                                                {isSender ? '-' : '+'}
+                                                {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} {tx.from_currency}
+                                            </p>
+                                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                                                tx.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                                tx.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-red-100 text-red-700'
+                                            }`}>
+                                                {tx.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : transactions.length > 0 ? (
                         <div className="space-y-1">
                             {transactions.map((t) => (
                                 <div key={t.id} className="flex items-center gap-3 py-3">
